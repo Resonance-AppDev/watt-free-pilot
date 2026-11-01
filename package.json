@@ -1,0 +1,12 @@
+{
+  "name": "watt-firebase-spark-r0",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "WATT Free Pilot static Firebase Hosting frontend, no npm dependencies",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "node --check public/assets/core.js && node --check public/assets/workspace.js && npm test",
+    "build": "node scripts/build-check.mjs"
+  }
+}

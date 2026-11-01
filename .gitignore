@@ -1,0 +1,16 @@
+# Do not commit credentials, generated state, or user content.
+node_modules/
+.firebase/
+.env
+.env.*
+*.log
+*.pem
+*.key
+*service-account*.json
+*credentials*.json
+firebase-debug.log
+.pytest_cache/
+__pycache__/
+.DS_Store
+preview/
+gha-creds-*.json

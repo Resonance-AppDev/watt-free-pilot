@@ -1,0 +1,42 @@
+name: WATT private frontend — tests only
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: watt-ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  source-security:
+    name: Static safety and source tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout (no write credentials)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify checksum-bound Hosting payload
+        run: sha256sum -c HOSTING-PAYLOAD.sha256
+      - name: Verify complete source integrity after checkout
+        run: python3 verify-kit.py
+      - name: Static syntax and source tests
+        run: npm run check
+      - name: Static build (no npm dependencies)
+        run: npm run build
+      - name: Verify GitHub preview restrictions
+        run: node --test tests/github-integration.test.mjs
+      - name: Verify no private Firebase service account has been added
+        run: |
+          if find . -type f \( -iname '*service-account*.json' -o -iname '*credentials*.json' -o -iname '*.pem' \) | grep .; then
+            echo 'STOP: credential-looking files exist in source' >&2
+            exit 1
+          fi
