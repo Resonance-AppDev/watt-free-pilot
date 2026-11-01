@@ -81,3 +81,20 @@ test('unified UI uses DOM text content and never stores keys or tokens',()=>{
  assert.match(html,/id="ask-watt"/);
  assert.doesNotMatch(ws+cli,/localStorage|sessionStorage|indexedDB|OPENAI_API_KEY|api\.openai\.com|sb_secret_|service_role/);
 });
+
+test('backend staging build cannot call OpenAI or publish replies',()=>{
+ const worker=fs.readFileSync('edge/watt-ai-room-worker/index.ts','utf8');
+ const preview=fs.readFileSync('03-Preview-Unified-AI.sh','utf8');
+ assert.match(worker,/const RELEASE_GATE_OPEN = false/);
+ assert.match(worker,/watt-ai-room-worker/);
+ assert.match(worker,/PILOT_ORIGIN/);
+ assert.match(worker,/watt-r12-unified-ai-/);
+ assert.match(worker,/watt_ai_room_status/);
+ assert.match(worker,/watt_ai_publish_reply/);
+ assert.match(preview,/CHANNEL='watt-r12-unified-ai-review'/);
+ assert.match(preview,/hosting:channel:list --project/);
+ assert.match(preview,/--no-authorized-domains/);
+ assert.match(preview,/--expires 7d/);
+ assert.doesNotMatch(preview,/^firebase deploy\s/m);
+ assert.doesNotMatch(preview,/^firebase hosting:clone\s/m);
+});
