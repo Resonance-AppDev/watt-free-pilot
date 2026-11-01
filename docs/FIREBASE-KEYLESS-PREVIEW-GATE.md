@@ -6,7 +6,7 @@
 
 The recommended approach is GitHub Actions **Workload Identity Federation (WIF)** through a Google service account, rather than storing an exportable long-lived JSON key. The repository now provides `.github/workflows/firebase-preview-keyless.yml`, which uses `google-github-actions/auth@v3`. It is manually triggered only on `main`, requires exact `PREVIEW_ONLY`, and calls the existing guarded `scripts/github-preview-only.sh` (a new 7-day channel, never `live`, no Auth authorized-domain changes). The original JSON-secret workflow is left intact as a separate *unconfigured* alternative; do not run both.
 
-**Cost:** This does not require paid ChatGPT Work, Desktop Commander, TinyFish or Floot credits. Whether Google Cloud permits configuring WIF *without enabling project billing* must be checked for this exact project before use. **Do not attach billing, enable new paid Google Cloud APIs, or upgrade Firebase Spark solely to configure this pathway.** If unavailable on the current project plan, stop and retain the prior manual signed-in Cloud Shell preview path instead.
+**Cost:** This does not require paid ChatGPT Work, Desktop Commander, TinyFish or Floot credits. Whether Google Cloud permits configuring WIF *without enabling project billing* must be checked for this exact project before use. **Do not enable billing, attach a billing account, enable new paid Google Cloud APIs, or upgrade Firebase Spark solely to configure this pathway.** If unavailable on the current project plan, stop and retain the prior manual signed-in Cloud Shell preview path instead.
 
 ## One-time cloud identity setup (authorized Google Cloud administrator)
 
