@@ -6,13 +6,15 @@ export const INVITE_CODE = /^[a-f0-9]{64}$/;
 const RPC_WHITELIST = new Set([
   'watt_pilot_list_rooms', 'watt_pilot_get_room', 'watt_pilot_create_room',
   'watt_pilot_join_room', 'watt_pilot_issue_invite', 'watt_pilot_revoke_invites',
-  'watt_pilot_send_message'
+  'watt_pilot_send_message',
+  'watt_ai_room_status','watt_ai_get_room_messages',
+  'watt_ai_set_member_consent','watt_ai_set_room_enabled'
 ]);
 export class PilotError extends Error {
   constructor(code = 'REQUEST_FAILED', status = 0) { super(code); this.name='PilotError'; this.code=code; this.status=status; }
 }
 export async function apiPost(path, body = {}, token = '', transport = globalThis.fetch, ms = 15000) {
-  if (!path.startsWith('/auth/v1/token?grant_type=password') && !/^\/rest\/v1\/rpc\/watt_pilot_[a-z_]+$/.test(path)) throw new PilotError('INVALID_PATH');
+  if (!path.startsWith('/auth/v1/token?grant_type=password') && !/^\/rest\/v1\/rpc\/(?:watt_pilot_|watt_ai_)[a-z_]+$/.test(path)) throw new PilotError('INVALID_PATH');
   if (typeof transport !== 'function') throw new PilotError('NO_NETWORK');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
@@ -96,6 +98,13 @@ export function friendlyError(err) {
   if(code==='INVALID_INVITE')return 'This invitation is invalid, expired, revoked or already used.';
   if(code==='OWNER_REQUIRED')return 'Only the room owner can perform this action.';
   if(code==='MESSAGE_ID_CONFLICT')return 'A message identifier was reused for different content. Your message was not accepted.';
+  if(code==='WORKER_NOT_READY'||code==='AI_DISABLED'||code==='AI_UNAVAILABLE'||code==='PROVIDER_NOT_CONFIGURED'||code==='AI_PROVIDER_CONFIGURATION')
+    return 'WATT AI is not available in this pilot room yet. Human messaging remains available.';
+  if(code==='ROOM_CONSENT_INCOMPLETE'||code==='CONSENT_INCOMPLETE'||code==='CONSENT_CHANGED')
+    return 'Everyone in this room must agree before WATT AI can respond.';
+  if(code==='AI_TIMEOUT'||code==='PROVIDER_UNAVAILABLE')
+    return 'WATT AI could not respond. Your human message remains saved; check before retrying.';
+
   if(code==='TIMEOUT')return 'Request timed out. The server may have completed the action; check rooms or messages before retrying.';
   if(code==='invalid_credentials'||err?.status===400)return 'Check your enrolled email and password.';
   if(code==='BAD_INPUT')return 'Please review the input and try again.';
