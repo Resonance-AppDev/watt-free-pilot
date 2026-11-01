@@ -16,6 +16,18 @@
     <label class="acknowledge"><input id="pilot-acknowledge" type="checkbox" required><span>I understand this is an invite-only pilot with human messaging, no automatic AI responses or paid services. <a href="/legal/" target="_blank" rel="noopener noreferrer">Read the pilot notice</a>.</span></label>
     <button id="login-submit" type="submit" class="button button-primary full">Sign in securely <span aria-hidden="true">→</span></button>
     <small class="form-note">Your access token is kept in this tab's memory, not local storage. Sign-in uses Supabase Auth over HTTPS.</small>
+    <button id="show-signup" type="button" class="button button-outline full">Have a pilot invitation? Enroll here</button>
+  </form>
+  <form id="signup-form" class="login-form" autocomplete="on" hidden>
+    <h2>Join the WATT pilot</h2><p>Enrollment requires a private invitation code. Existing accounts should sign in instead.</p>
+    <label for="signup-email">Your email</label><input id="signup-email" type="email" autocomplete="email" maxlength="254" required placeholder="you@example.com">
+    <label for="signup-code">Private invitation code</label><input id="signup-code" type="text" minlength="64" maxlength="64" pattern="[a-fA-F0-9]{64}" autocomplete="off" spellcheck="false" required placeholder="64-character invitation code">
+    <label for="signup-password">Create password (at least 12 characters)</label><input id="signup-password" type="password" minlength="12" autocomplete="new-password" required>
+    <label for="signup-confirm">Confirm password</label><input id="signup-confirm" type="password" minlength="12" autocomplete="new-password" required>
+    <label class="acknowledge"><input id="signup-acknowledge" type="checkbox" required><span>I accept the invite-only free pilot rules, with no automatic AI replies or payments. <a href="/legal/" target="_blank" rel="noopener noreferrer">Pilot notice</a>.</span></label>
+    <button id="signup-submit" type="submit" class="button button-primary full">Request enrolled account →</button>
+    <small class="form-note">A server-verified invitation and email confirmation are required. No account is created if enrollment is not activated.</small>
+    <button id="show-login" type="button" class="button button-outline full">Already enrolled? Sign in</button>
   </form>
   <aside class="login-context"><span class="context-icon">◇</span><h2>One account. Same WATT.</h2><p>Existing rooms and messages are not copied to Firebase. Firebase serves only this frontend; your approved Supabase backend remains the source of truth.</p>
   <ul class="checks"><li>Server-checked room membership</li><li>Up to 2 owned rooms per account</li><li>Up to 6 participants per room</li><li>No payment or automatic AI posting</li></ul></aside>
@@ -35,6 +47,6 @@
     </section>
   </div>
 </section>
-<section class="workspace-disclaimer"><strong>WATT Free Pilot safeguards</strong><p>Private human messaging only. No public signup, paid subscriptions, automated AI replies, evidence publishing, reviewer signing or Sparks. Access control and usage limits are checked on the existing Supabase backend. This frontend does not migrate or duplicate stored conversations.</p></section>
+<section class="workspace-disclaimer"><strong>WATT Free Pilot safeguards</strong><p>Private human messaging only. Invite-gated enrollment only (not open registration), no paid subscriptions, automated AI replies, evidence publishing, reviewer signing or Sparks. Access control and usage limits are checked on the existing Supabase backend. This frontend does not migrate or duplicate stored conversations.</p></section>
 </main><footer class="site-footer workspace-footer"><div class="wrap">WATT Free Pilot · Firebase static frontend target · Existing Supabase data preserved · Commercial release on hold</div></footer>
 <script type="module" src="/assets/workspace.js"></script></body></html>

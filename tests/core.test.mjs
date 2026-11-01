@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import {apiPost,rpc,signInWithPassword,normalizeRooms,normalizeRoom,checkMessage,nextPending,secureUUID,friendlyError,isExpired,PilotError} from '../public/assets/core.js';
+import {apiPost,rpc,signInWithPassword,signUpWithPilotInvite,normalizeRooms,normalizeRoom,checkMessage,nextPending,secureUUID,friendlyError,isExpired,PilotError} from '../public/assets/core.js';
 const uid='11111111-1111-4111-8111-111111111111', rid='22222222-2222-4222-8222-222222222222';
 const respond=(data,status=200)=>async(_url,options)=>({ok:status>=200&&status<300,status, async json(){return data;}});
 test('public Supabase client uses only scoped publishable key',()=>{
@@ -71,3 +71,32 @@ test('marketing site makes no subscription or AI execution network calls',()=>{
 });
 
 test('generated message identifiers are UUID v4 without weak randomness',()=>{ assert.match(secureUUID(),/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i); });
+
+test('pilot sign-up requires invitation reservation before Auth signup',async()=>{
+ const calls=[];const reservation='44444444-4444-4444-8444-444444444444';
+ const transport=async(url,opts)=>{
+   calls.push({url,opts});
+   if(url.endsWith('/rest/v1/rpc/watt_pilot_reserve_signup'))
+     return {ok:true,status:200,json:async()=>({ok:true,reservation_id:reservation})};
+   if(url.endsWith('/auth/v1/signup'))
+     return {ok:true,status:200,json:async()=>({user:{id:uid}})};
+   throw Error('Unexpected endpoint');
+ };
+ const result=await signUpWithPilotInvite('enrollee@example.test','a-strong-password','a'.repeat(64),transport);
+ assert.equal(result.confirmationRequired,true);
+ assert.equal(calls.length,2);
+ assert.ok(calls[0].url.endsWith('/rest/v1/rpc/watt_pilot_reserve_signup'));
+ assert.ok(calls[1].url.endsWith('/auth/v1/signup'));
+ assert.equal(JSON.parse(calls[1].opts.body).data.watt_reservation_id,reservation);
+ assert.equal(calls[1].opts.credentials,'omit');
+ assert.ok(!('Authorization' in calls[1].opts.headers));
+});
+test('rejected or unavailable invitation blocks creation',async()=>{
+ let calls=0;const transport=async()=>{
+   calls++;return {ok:false,status:403,json:async()=>({code:'SIGNUP_DISABLED'})};
+ };
+ await assert.rejects(()=>signUpWithPilotInvite('a@example.test','a-strong-password','b'.repeat(64),transport));
+ assert.equal(calls,1);
+ await assert.rejects(()=>signUpWithPilotInvite('a@example.test','short','b'.repeat(64),transport),e=>e.code==='BAD_INPUT');
+ assert.equal(calls,1);
+});
