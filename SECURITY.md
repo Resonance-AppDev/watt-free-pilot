@@ -2,7 +2,7 @@
 
 The frontend uses only the **Supabase publishable key**, not the service-role key or privileged database credentials. The publishable key is an identifier, **not** a security boundary; server-side membership and row authorization are mandatory.
 
-- Repository must be **private** before upload. Never turn on GitHub Pages for the commercial WATT application.
+- This source repository is now **public** by explicit owner approval. Protect `main` and never put credentials, private chat content or customer data in source or GitHub issues.
 - GitHub Actions `ci.yml` runs tests only. No push or pull request automatically deploys to a live environment.
 - `firebase-preview.yml` is `workflow_dispatch` only, runs on `main`, requires exact `PREVIEW_ONLY`, and targets a new seven-day Firebase Hosting channel only. Every rerun of the same commit refuses to overwrite the existing preview.
 - **Never** commit Firebase service-account JSON, Supabase service-role keys, GitHub tokens, OAuth credentials, private messages, user emails/passwords or backups.
