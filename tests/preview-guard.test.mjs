@@ -28,3 +28,24 @@ test('public content is ready for controlled enrollment and existing Supabase',(
  assert.match(text,/INVITE-ONLY PILOT/);assert.match(text,/R0 Free Pilot/);
  assert.match(fs.readFileSync('public/assets/core.js','utf8'),/qylyuijjeruvbxipnrgh/);
 });
+
+test('directory routes use Firebase native index handling without explicit redirects',()=>{
+ assert.ok(!('redirects' in conf.hosting), 'No redundant /workspace or /legal redirects');
+ assert.ok(!('trailingSlash' in conf.hosting), 'Use Firebase default directory index handling');
+ assert.equal(conf.hosting.cleanUrls,false);
+ for(const directory of ['workspace','legal']){
+   assert.ok(fs.statSync('public/'+directory+'/index.html').isFile());
+ }
+});
+test('fresh routing-fix preview uses independent channel and refuses live or existing channels',()=>{
+ const fix=fs.readFileSync('02-Preview-Routing-Fix.sh','utf8');
+ assert.match(fix,/CHANNEL='watt-r09-routing-review'/);
+ assert.match(fix,/sha256sum -c HOSTING-PAYLOAD.sha256/);
+ assert.match(fix,/python3 verify-kit.py/);
+ assert.match(fix,/hosting:channel:list --project/);
+ assert.match(fix,/firebase hosting:channel:deploy "\$CHANNEL"/);
+ assert.match(fix,/--no-authorized-domains/);
+ assert.match(fix,/--expires 7d/);
+ assert.doesNotMatch(fix,/^firebase deploy\s/m);
+ assert.doesNotMatch(fix,/^firebase hosting:clone\s/m);
+});
