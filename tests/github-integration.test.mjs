@@ -33,3 +33,27 @@ test('Private repo and source/credential protections are documented',()=>{
  assert.match(fs.readFileSync('.gitignore','utf8'),/\.env/);
  assert.match(fs.readFileSync('.gitignore','utf8'),/service-account/);
 });
+
+test('Optional keyless Firebase preview is scoped, explicit, and cannot run on PR or push',()=>{
+ const wif=fs.readFileSync('.github/workflows/firebase-preview-keyless.yml','utf8');
+ assert.match(wif,/workflow_dispatch:/);
+ assert.doesNotMatch(wif,/^  push:/m);
+ assert.doesNotMatch(wif,/^  pull_request:/m);
+ assert.match(wif,/Resonance-AppDev\\/watt-free-pilot/);
+ assert.match(wif,/refs\\/heads\\/main/);
+ assert.match(wif,/PREVIEW_ONLY/);
+ assert.match(wif,/id-token: write/);
+ assert.match(wif,/google-github-actions\\/auth@v3/);
+ assert.match(wif,/vars.WATT_WIF_PROVIDER/);
+ assert.match(wif,/vars.WATT_WIF_SERVICE_ACCOUNT/);
+ assert.match(wif,/scripts\\/github-preview-only.sh/);
+ assert.doesNotMatch(wif,/credentials_json|secrets\\./);
+ assert.doesNotMatch(wif,/^\\s*firebase deploy /m);
+});
+test('Keyless preview documents immutable repository identity and billing gate',()=>{
+ const guide=fs.readFileSync('docs/FIREBASE-KEYLESS-PREVIEW-GATE.md','utf8');
+ assert.match(guide,/repository_id == '1441700773'/);
+ assert.match(guide,/assertion.workflow_ref/);
+ assert.match(guide,/Do not enable billing/);
+ assert.match(guide,/do not remove that IAM capability/);
+});

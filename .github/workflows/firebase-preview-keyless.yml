@@ -1,0 +1,62 @@
+name: WATT Firebase — keyless manual preview ONLY
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type PREVIEW_ONLY for a new 7-day review channel; never live'
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: watt-firebase-preview-protected
+  cancel-in-progress: false
+jobs:
+  firebase-keyless-review:
+    if: github.repository == 'Resonance-AppDev/watt-free-pilot' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.confirmation == 'PREVIEW_ONLY'
+    name: Keyless federated identity; new preview channel only
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout without credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify source before requesting cloud access
+        run: |
+          sha256sum -c HOSTING-PAYLOAD.sha256
+          python3 verify-kit.py
+          npm run check
+          npm run build
+      - name: Reject missing or unexpected WIF configuration
+        env:
+          WIF_PROVIDER: ${{ vars.WATT_WIF_PROVIDER }}
+          WIF_SERVICE_ACCOUNT: ${{ vars.WATT_WIF_SERVICE_ACCOUNT }}
+        run: |
+          if [[ ! "$WIF_PROVIDER" =~ ^projects/[0-9]+/locations/global/workloadIdentityPools/[a-zA-Z0-9_-]+/providers/[a-zA-Z0-9_-]+$ ]]; then
+            echo 'STOP: Missing or malformed reviewed WATT_WIF_PROVIDER' >&2
+            exit 2
+          fi
+          if [[ "$WIF_SERVICE_ACCOUNT" != *@watt-36912.iam.gserviceaccount.com ]]; then
+            echo 'STOP: Dedicated WATT_WIF_SERVICE_ACCOUNT must belong to watt-36912' >&2
+            exit 2
+          fi
+      - name: GitHub OIDC to Google Cloud (no JSON key)
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: watt-36912
+          workload_identity_provider: ${{ vars.WATT_WIF_PROVIDER }}
+          service_account: ${{ vars.WATT_WIF_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Install Firebase CLI for runner
+        run: npm install --global firebase-tools
+      - name: Deploy unused 7-day preview only
+        run: bash scripts/github-preview-only.sh
