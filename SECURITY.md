@@ -10,3 +10,7 @@ The frontend uses only the **Supabase publishable key**, not the service-role ke
 - Firebase live channel, Firestore, Firebase Auth, Supabase records/settings, Floot and Wix are excluded from automated deployment.
 - No public registration, billing, AI autopost, Sparks, evidence retrieval/publishing or human reviewer signing; commercial release remains on HOLD.
 - Release to Firebase live requires **another separate approval** after two real-account tests, source review and backup/recovery verification.
+
+## Optional keyless Google Cloud authentication
+
+The separate `.github/workflows/firebase-preview-keyless.yml` uses GitHub OIDC with a dedicated service account and strictly scoped Workload Identity Federation provider. It is **not configured**. Setup requires reviewed project IAM and Google Cloud plan eligibility; it must not cause billing activation. Hosting permissions can still permit a live deploy, so GitHub workflow guards do not replace Google Cloud permission review. See `docs/FIREBASE-KEYLESS-PREVIEW-GATE.md`.

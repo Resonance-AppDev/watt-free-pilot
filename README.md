@@ -36,3 +36,7 @@ For operators: clone the private repository, run `python3 verify-kit.py && npm r
 - Original WATT CK30 canonical source parity, privileged-function security reviewer signoff, two real-account cross-room acceptance, privacy/legal review and paid commercialization remain outstanding.
 
 For the release gate and rollback details, read `docs/MIGRATION-CUTOVER-AND-ROLLBACK.md` and `SECURITY.md`.
+
+## Optional keyless preview path — STAGED, NOT CONFIGURED
+
+A separate manual GitHub OIDC Workload Identity Federation workflow is available at `.github/workflows/firebase-preview-keyless.yml`, with identity, billing and security gates in `docs/FIREBASE-KEYLESS-PREVIEW-GATE.md`. It requires reviewed Google Cloud IAM setup and never automatically deploys on a push or pull request.
