@@ -37,6 +37,10 @@ For operators: clone the private repository, run `python3 verify-kit.py && npm r
 
 For the release gate and rollback details, read `docs/MIGRATION-CUTOVER-AND-ROLLBACK.md` and `SECURITY.md`.
 
-## Optional keyless preview path — STAGED, NOT CONFIGURED
+## Optional keyless preview route — STAGED, NOT AUTHENTICATED
 
-A separate manual GitHub OIDC Workload Identity Federation workflow is available at `.github/workflows/firebase-preview-keyless.yml`, with identity, billing and security gates in `docs/FIREBASE-KEYLESS-PREVIEW-GATE.md`. It requires reviewed Google Cloud IAM setup and never automatically deploys on a push or pull request.
+A separate manual GitHub OIDC Workload Identity Federation workflow is available in `.github/workflows/firebase-preview-keyless.yml` with setup and security gates in `docs/FIREBASE-KEYLESS-PREVIEW-GATE.md`. It requires Google Cloud IAM setup and is not a claim of deployed Hosting or verified billing-free eligibility. It does not auto-run on `push` or `pull_request`.
+
+## R05 — Automatic workflow with locked preview gate
+
+`ci.yml` now runs for every PR/push to main and uploads a one-day private static review artifact after a successful `main` push. The new `firebase-auto-preview.yml` reports readiness automatically and **SKIPS all Firebase access by default**. To permit automatic, temporary previews after the initial manual real-account acceptance and audited Google WIF configuration, an operator must explicitly set **both** `WATT_AUTO_PREVIEW_ENABLED=true` and `WATT_PREVIEW_ACCEPTANCE_APPROVED=true` plus the approved WIF resource identifiers. No live deploy ever runs. See `docs/AUTOMATED-PREVIEW-OPERATIONS.md`.

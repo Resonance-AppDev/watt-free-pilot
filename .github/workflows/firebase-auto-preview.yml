@@ -1,0 +1,87 @@
+name: WATT Firebase — automatic preview OPT-IN (never live)
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: watt-firebase-preview-protected
+  cancel-in-progress: false
+jobs:
+  readiness:
+    name: Report automatic-preview readiness (no cloud credentials)
+    if: github.repository == 'Resonance-AppDev/watt-free-pilot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Explain deployment opt-in
+        env:
+          AUTO: ${{ vars.WATT_AUTO_PREVIEW_ENABLED }}
+          ACCEPTED: ${{ vars.WATT_PREVIEW_ACCEPTANCE_APPROVED }}
+          PROVIDER: ${{ vars.WATT_WIF_PROVIDER }}
+          ACCOUNT: ${{ vars.WATT_WIF_SERVICE_ACCOUNT }}
+        run: |
+          if [[ "$AUTO" == 'true' && "$ACCEPTED" == 'true' && -n "$PROVIDER" && -n "$ACCOUNT" ]]; then
+            echo 'Automation prerequisites are supplied; separate deployment job still validates the source and cloud identity.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Automatic Firebase preview is disabled until BOTH explicit approvals and keyless Google IAM identifiers are configured.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'No Firebase access attempted. GitHub CI publishes a private review artifact on main.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  firebase-preview:
+    needs: readiness
+    if: >-
+      ${{ github.repository == 'Resonance-AppDev/watt-free-pilot' &&
+          github.ref == 'refs/heads/main' &&
+          github.event_name == 'push' &&
+          github.event.repository.private == true &&
+          vars.WATT_AUTO_PREVIEW_ENABLED == 'true' &&
+          vars.WATT_PREVIEW_ACCEPTANCE_APPROVED == 'true' &&
+          vars.WATT_WIF_PROVIDER != '' &&
+          vars.WATT_WIF_SERVICE_ACCOUNT != '' }}
+    name: Automatically deploy an unused seven-day PREVIEW channel ONLY
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout with no stored GitHub credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify complete source and Hosting payload BEFORE cloud auth
+        run: |
+          sha256sum -c HOSTING-PAYLOAD.sha256
+          python3 verify-kit.py
+          npm run check
+          npm run build
+      - name: Fail closed for unexpected identity
+        env:
+          WIF_PROVIDER: ${{ vars.WATT_WIF_PROVIDER }}
+          WIF_SERVICE_ACCOUNT: ${{ vars.WATT_WIF_SERVICE_ACCOUNT }}
+        run: |
+          if [[ ! "$WIF_PROVIDER" =~ ^projects/[0-9]+/locations/global/workloadIdentityPools/[a-zA-Z0-9_-]+/providers/[a-zA-Z0-9_-]+$ ]]; then
+            echo 'STOP: Missing or malformed WATT_WIF_PROVIDER' >&2
+            exit 2
+          fi
+          if [[ "$WIF_SERVICE_ACCOUNT" != *@watt-36912.iam.gserviceaccount.com ]]; then
+            echo 'STOP: Dedicated WATT account must belong to watt-36912' >&2
+            exit 2
+          fi
+      - name: GitHub push OIDC to scoped Google Cloud service account
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: watt-36912
+          workload_identity_provider: ${{ vars.WATT_WIF_PROVIDER }}
+          service_account: ${{ vars.WATT_WIF_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Install Firebase CLI on ephemeral runner only
+        run: npm install --global firebase-tools
+      - name: Deploy NEW seven-day Firebase preview; NEVER live
+        run: bash scripts/github-preview-only.sh

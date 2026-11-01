@@ -40,3 +40,11 @@ jobs:
             echo 'STOP: credential-looking files exist in source' >&2
             exit 1
           fi
+      - name: Archive reviewed static frontend (private GitHub artifact; no deploy)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: watt-reviewed-static-${{ github.sha }}
+          path: public/
+          if-no-files-found: error
+          retention-days: 1

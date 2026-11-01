@@ -11,6 +11,10 @@ The frontend uses only the **Supabase publishable key**, not the service-role ke
 - No public registration, billing, AI autopost, Sparks, evidence retrieval/publishing or human reviewer signing; commercial release remains on HOLD.
 - Release to Firebase live requires **another separate approval** after two real-account tests, source review and backup/recovery verification.
 
-## Optional keyless Google Cloud authentication
+## Optional keyless alternative
 
-The separate `.github/workflows/firebase-preview-keyless.yml` uses GitHub OIDC with a dedicated service account and strictly scoped Workload Identity Federation provider. It is **not configured**. Setup requires reviewed project IAM and Google Cloud plan eligibility; it must not cause billing activation. Hosting permissions can still permit a live deploy, so GitHub workflow guards do not replace Google Cloud permission review. See `docs/FIREBASE-KEYLESS-PREVIEW-GATE.md`.
+`.github/workflows/firebase-preview-keyless.yml` is **unconfigured** and uses GitHub OIDC WIF. It does not store a JSON key; a reviewed GCP provider, dedicated service account, strictly scoped IAM and two GitHub Actions variables are required before use. See `docs/FIREBASE-KEYLESS-PREVIEW-GATE.md`. **WIF does not remove the possibility that a Hosting role can reach the live channel.** Do not loosen the release gates or add project billing to enable this.
+
+## R05 — Automatic preview is explicitly OFF
+
+Automatic tests and one-day private static review artifacts on `main` are permitted. `firebase-auto-preview.yml` runs a readiness report on `main` push but can only request Google OIDC and deploy if **both** `WATT_AUTO_PREVIEW_ENABLED` and `WATT_PREVIEW_ACCEPTANCE_APPROVED` are explicitly set to `true`, two WIF identity variables are present, and the source safety checks pass. Keep these flags unset until Google IAM reviewed and the **first manual Firebase preview has passed** real two-account acceptance. See `docs/AUTOMATED-PREVIEW-OPERATIONS.md`.
