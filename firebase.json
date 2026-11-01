@@ -2,12 +2,7 @@
   "hosting": {
     "public": "public",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "**/*.map"],
-    "trailingSlash": true,
     "cleanUrls": false,
-    "redirects": [
-      { "source": "/workspace", "destination": "/workspace/", "type": 301 },
-      { "source": "/legal", "destination": "/legal/", "type": 301 }
-    ],
     "headers": [
       {
         "source": "**",
