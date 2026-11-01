@@ -29,12 +29,22 @@
     <aside class="room-sidebar" aria-label="Your rooms"><div class="side-heading"><strong>◎ Your rooms</strong><span id="room-count">0</span></div><div id="room-list" class="room-list" role="group" aria-label="Select a room"></div><button id="refresh-rooms" type="button" class="refresh-room-list">↻ Refresh rooms</button>
       <div id="owner-tools" class="owner-tools" hidden><strong>Owner controls</strong><p>Share invitations privately with enrolled accounts.</p><div class="owner-buttons"><button id="generate-invite" type="button">Generate invite</button><button id="revoke-invites" type="button">Revoke codes</button></div><div id="invite-panel" class="invite-panel" hidden><label for="invite-code">Private invitation code</label><input id="invite-code" readonly autocomplete="off" spellcheck="false"><button type="button" id="copy-invite">Copy code</button><small id="invite-expiry"></small></div></div>
     </aside>
-    <section class="conversation" aria-label="Room conversation"><div class="conversation-header"><div><h2 id="room-title">Choose a room</h2><p id="room-description">Your authorized rooms and human conversations</p></div><div class="room-actions"><button id="refresh-messages" class="button button-outline small-button" type="button" disabled>↻ Refresh</button><span class="free-pill">HUMAN CHAT</span></div></div>
+    <section class="conversation" aria-label="Room conversation"><div class="conversation-header"><div><h2 id="room-title">Choose a room</h2><p id="room-description">Your authorized rooms and human conversations</p></div><div class="room-actions"><button id="refresh-messages" class="button button-outline small-button" type="button" disabled>↻ Refresh</button><span class="free-pill">HUMANS + WATT AI</span></div></div>
       <div id="messages" class="messages" role="log" aria-live="polite" aria-relevant="additions text"><div class="chat-empty"><div aria-hidden="true">◎</div><strong>Choose a room</strong><p>Your authorized messages will appear here.</p></div></div>
-      <form id="send-form" class="send-form"><label for="message-draft">Message your room</label><textarea id="message-draft" rows="3" maxlength="2000" disabled placeholder="Select a private room to start"></textarea><div class="send-footer"><span id="message-count">0/2,000 · Human messages only. AI automatic posting is OFF.</span><button id="send-button" type="submit" class="button button-primary small-button" disabled>Send message →</button></div></form>
+      <section id="ai-controls" class="ai-controls" aria-label="WATT AI room preferences" hidden>
+        <div class="ai-control-copy"><strong>◇ WATT AI · room participant</strong>
+          <small id="ai-status" role="status" aria-live="polite">Checking room settings…</small>
+          <small id="ai-privacy">When enabled, @WATT sends that message to OpenAI. All members must agree once per room; consent can be withdrawn.</small>
+        </div>
+        <div class="ai-control-buttons">
+          <button id="ai-consent" type="button" class="button button-outline small-button" disabled>Allow AI in room</button>
+          <button id="ai-room-switch" type="button" class="button button-outline small-button" hidden disabled>Enable room AI</button>
+        </div>
+      </section>
+      <form id="send-form" class="send-form"><label for="message-draft">Message your room <span class="ai-helper">· mention @WATT to ask WATT AI</span></label><textarea id="message-draft" rows="3" maxlength="2000" disabled placeholder="Select a private room to start"></textarea><div class="send-footer"><span id="message-count">0/2,000 · Human conversation; WATT AI replies require room consent and activation.</span><div class="send-actions"><button id="ask-watt" type="button" class="button button-outline small-button" disabled>Ask WATT AI</button><button id="send-button" type="submit" class="button button-primary small-button" disabled>Send message →</button></div></div></form>
     </section>
   </div>
 </section>
-<section class="workspace-disclaimer"><strong>WATT Free Pilot safeguards</strong><p>Private human messaging only. No public signup, paid subscriptions, automated AI replies, evidence publishing, reviewer signing or Sparks. Access control and usage limits are checked on the existing Supabase backend. This frontend does not migrate or duplicate stored conversations.</p></section>
+<section class="workspace-disclaimer"><strong>WATT Free Pilot safeguards</strong><p>Private messaging with optional, clearly identified WATT AI (only after room-wide consent and operator activation). No public signup, paid subscriptions, evidence publishing, reviewer signing or Sparks. Access control and usage limits are checked on the existing Supabase backend. This frontend does not migrate or duplicate stored conversations.</p></section>
 </main><footer class="site-footer workspace-footer"><div class="wrap">WATT Free Pilot · Firebase static frontend target · Existing Supabase data preserved · Commercial release on hold</div></footer>
 <script type="module" src="/assets/workspace.js"></script></body></html>
