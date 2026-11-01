@@ -12,7 +12,7 @@ export class PilotError extends Error {
   constructor(code = 'REQUEST_FAILED', status = 0) { super(code); this.name='PilotError'; this.code=code; this.status=status; }
 }
 export async function apiPost(path, body = {}, token = '', transport = globalThis.fetch, ms = 15000) {
-  if (!path.startsWith('/auth/v1/token?grant_type=password') && !/^\/rest\/v1\/rpc\/watt_pilot_[a-z_]+$/.test(path)) throw new PilotError('INVALID_PATH');
+  if (!path.startsWith('/auth/v1/token?grant_type=password') && path!=='/auth/v1/signup' && !/^\/rest\/v1\/rpc\/watt_pilot_[a-z_]+$/.test(path)) throw new PilotError('INVALID_PATH');
   if (typeof transport !== 'function') throw new PilotError('NO_NETWORK');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
@@ -48,6 +48,24 @@ export async function signInWithPassword(email, password, transport=globalThis.f
      u.is_anonymous || !u.email_confirmed_at || !Number.isFinite(seconds) || seconds<=20 || seconds>86400)
      throw new PilotError('AUTH_REQUIRED',401);
   return {token:res.access_token,id:u.id,email:String(u.email??email).slice(0,254),expiresAt:Date.now()+(seconds-15)*1000};
+}
+export async function signUpWithPilotInvite(email, password, invitation, transport=globalThis.fetch) {
+  const cleanEmail=String(email??'').trim();
+  const code=String(invitation??'').trim().toLowerCase();
+  if(!cleanEmail||cleanEmail.length>254||!cleanEmail.includes('@')||
+     typeof password!=='string'||password.length<12||password.length>128||
+     !INVITE_CODE.test(code))throw new PilotError('BAD_INPUT',400);
+  // Server approval must occur BEFORE calling Supabase Auth. The Auth "Before User
+  // Created" hook must independently verify a fresh one-use reservation.
+  const reserved=await apiPost('/rest/v1/rpc/watt_pilot_reserve_signup',{p_token:code},'',transport);
+  if(reserved?.ok!==true || !ROOM_ID.test(reserved.reservation_id??''))throw new PilotError('ENROLLMENT_CLOSED',403);
+  const response=await apiPost('/auth/v1/signup',{
+    email:cleanEmail,password,data:{watt_reservation_id:reserved.reservation_id}
+  },'',transport);
+  if(!response?.user||!ROOM_ID.test(response.user.id??''))throw new PilotError('INVALID_RESPONSE');
+  // Never adopt any returned token. Email confirmation and subsequent sign-in
+  // always require the existing confirmed-user checks and server room membership.
+  return {confirmationRequired:true};
 }
 export function normalizeRooms(data) {
   if(!Array.isArray(data?.rooms)||data.rooms.length>100) throw new PilotError('INVALID_RESPONSE');
@@ -93,6 +111,8 @@ export function friendlyError(err) {
   if(code==='ROOM_FULL')return 'This room has reached its six-person limit.';
   if(code==='MESSAGE_LIMIT')return 'This room has reached its 1,000-message limit.';
   if(code==='SEND_LIMIT'||code==='JOIN_LIMIT'||err?.status===429)return 'The current rate limit has been reached. Try again later.';
+  if(code==='ENROLLMENT_CLOSED'||code==='SIGNUP_DISABLED'||err?.status===403)return 'Pilot enrollment is not active or this invitation was not accepted.';
+  if(code==='INVALID_TOKEN'||code==='SIGNUP_TOTAL_LIMIT'||code==='SIGNUP_TOKEN_LIMIT'||code==='SIGNUP_GLOBAL_LIMIT')return 'Pilot invitation is invalid or the enrollment limit has been reached.';
   if(code==='INVALID_INVITE')return 'This invitation is invalid, expired, revoked or already used.';
   if(code==='OWNER_REQUIRED')return 'Only the room owner can perform this action.';
   if(code==='MESSAGE_ID_CONFLICT')return 'A message identifier was reused for different content. Your message was not accepted.';

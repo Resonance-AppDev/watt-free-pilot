@@ -1,4 +1,4 @@
-import {rpc,signInWithPassword,normalizeRooms,normalizeRoom,checkMessage,nextPending,friendlyError,isExpired,ROOM_ID,INVITE_CODE} from './core.js';
+import {rpc,signInWithPassword,signUpWithPilotInvite,normalizeRooms,normalizeRoom,checkMessage,nextPending,friendlyError,isExpired,ROOM_ID,INVITE_CODE} from './core.js';
 
 const $=id=>document.getElementById(id);
 const state={session:null,rooms:[],activeRoomId:null,messages:new Map(),cursors:new Map(),drafts:new Map(),pending:new Map(),
@@ -6,7 +6,7 @@ const state={session:null,rooms:[],activeRoomId:null,messages:new Map(),cursors:
 function notice(text,warning=false){$('status-text').textContent=text;$('status').classList.toggle('warning',warning);}
 function setBusy(action=''){
   state.action=action;
-  for(const id of ['login-submit','show-create','show-join','refresh-rooms','generate-invite','revoke-invites','copy-invite']){
+  for(const id of ['signup-submit','show-signup','show-login','login-submit','show-create','show-join','refresh-rooms','generate-invite','revoke-invites','copy-invite']){
     const el=$(id);if(el)el.disabled=Boolean(action);
   }
   $('message-draft').disabled=Boolean(action)||!state.activeRoomId;
@@ -149,6 +149,33 @@ async function runAction(name,fn){
     else notice(friendlyError(e),true);
   }}finally{if(state.session===session){setBusy();updateComposer();}}
 }
+function toggleEnrollment(show){
+  if(state.action||state.session)return;
+  $('login-form').hidden=show;$('signup-form').hidden=!show;
+  notice(show?'Invitation required. Enrollment is subject to server approval and email verification.':'Sign in with your existing WATT pilot account.');
+  if(show)$('signup-email').focus();else $('email').focus();
+}
+$('show-signup').addEventListener('click',()=>toggleEnrollment(true));
+$('show-login').addEventListener('click',()=>toggleEnrollment(false));
+$('signup-form').addEventListener('submit',async e=>{
+  e.preventDefault();if(state.action||state.session)return;
+  const form=$('signup-form');
+  const email=$('signup-email').value.trim();
+  const code=$('signup-code').value.trim().toLowerCase();
+  let password=$('signup-password').value;
+  const confirmed=$('signup-confirm').value;
+  if(password!==confirmed){notice('Passwords must match.',true);return;}
+  const epoch=++state.loginEpoch;setBusy('signup');
+  notice('Validating invitation and enrollment permissions…');
+  try{
+    await signUpWithPilotInvite(email,password,code);
+    if(epoch!==state.loginEpoch)return;
+    form.reset();
+    $('login-form').hidden=false;$('signup-form').hidden=true;
+    notice('If your invitation was accepted, confirm your email, then sign in. Keep your invitation code private for joining the room.');
+  }catch(err){if(epoch===state.loginEpoch)notice(friendlyError(err),true);}
+  finally{password='';$('signup-password').value='';$('signup-confirm').value='';setBusy();updateComposer();}
+});
 $('login-form').addEventListener('submit',async e=>{
   e.preventDefault();if(state.action||state.session)return;
   const email=$('email').value.trim();let password=$('password').value;$('password').value='';
