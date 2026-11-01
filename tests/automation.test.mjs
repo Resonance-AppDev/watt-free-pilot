@@ -19,7 +19,10 @@ test('Automatic preview executes only on private main push with both distinct op
   assert.match(auto,/^  push:\n    branches: \[main\]/m);
   assert.doesNotMatch(auto,/^  workflow_dispatch:/m);
   assert.match(auto,/github.repository == 'Resonance-AppDev\/watt-free-pilot'/);
-  assert.match(auto,/github.event.repository.private == true/);
+  assert.match(auto,/github.event.repository.visibility == 'public'/);
+  assert.match(auto,/needs.readiness.outputs.protected == 'true'/);
+  assert.ok(auto.includes('gh api repos/Resonance-AppDev/watt-free-pilot/branches/main'));
+  assert.doesNotMatch(auto,/github.event.repository.private == true/);
   assert.match(auto,/vars.WATT_AUTO_PREVIEW_ENABLED == 'true'/);
   assert.match(auto,/vars.WATT_PREVIEW_ACCEPTANCE_APPROVED == 'true'/);
   assert.match(auto,/vars.WATT_AUTO_WIF_PROVIDER != ''/);
