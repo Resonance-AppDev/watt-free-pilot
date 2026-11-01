@@ -1,0 +1,22 @@
+name: WATT public repository - source and history audit
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-source-audit:
+    name: Full-history secret and unsafe-file audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout full Git history without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Audit history before public visibility or publishing
+        run: python3 scripts/public-repo-audit.py
