@@ -10,7 +10,7 @@ concurrency:
 jobs:
   readiness:
     name: Report automatic-preview readiness (no cloud credentials)
-    if: github.repository == 'Resonance-AppDev/watt-free-pilot'
+    if: github.repository == 'Resonance-AppDev/watt-free-pilot' && github.repository_id == '1441700773'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -18,8 +18,8 @@ jobs:
         env:
           AUTO: ${{ vars.WATT_AUTO_PREVIEW_ENABLED }}
           ACCEPTED: ${{ vars.WATT_PREVIEW_ACCEPTANCE_APPROVED }}
-          PROVIDER: ${{ vars.WATT_WIF_PROVIDER }}
-          ACCOUNT: ${{ vars.WATT_WIF_SERVICE_ACCOUNT }}
+          PROVIDER: ${{ vars.WATT_AUTO_WIF_PROVIDER }}
+          ACCOUNT: ${{ vars.WATT_AUTO_WIF_SERVICE_ACCOUNT }}
         run: |
           if [[ "$AUTO" == 'true' && "$ACCEPTED" == 'true' && -n "$PROVIDER" && -n "$ACCOUNT" ]]; then
             echo 'Automation prerequisites are supplied; separate deployment job still validates the source and cloud identity.' >> "$GITHUB_STEP_SUMMARY"
@@ -31,14 +31,14 @@ jobs:
   firebase-preview:
     needs: readiness
     if: >-
-      ${{ github.repository == 'Resonance-AppDev/watt-free-pilot' &&
+      ${{ github.repository == 'Resonance-AppDev/watt-free-pilot' && github.repository_id == '1441700773' &&
           github.ref == 'refs/heads/main' &&
           github.event_name == 'push' &&
           github.event.repository.private == true &&
           vars.WATT_AUTO_PREVIEW_ENABLED == 'true' &&
           vars.WATT_PREVIEW_ACCEPTANCE_APPROVED == 'true' &&
-          vars.WATT_WIF_PROVIDER != '' &&
-          vars.WATT_WIF_SERVICE_ACCOUNT != '' }}
+          vars.WATT_AUTO_WIF_PROVIDER != '' &&
+          vars.WATT_AUTO_WIF_SERVICE_ACCOUNT != '' }}
     name: Automatically deploy an unused seven-day PREVIEW channel ONLY
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -62,8 +62,8 @@ jobs:
           npm run build
       - name: Fail closed for unexpected identity
         env:
-          WIF_PROVIDER: ${{ vars.WATT_WIF_PROVIDER }}
-          WIF_SERVICE_ACCOUNT: ${{ vars.WATT_WIF_SERVICE_ACCOUNT }}
+          WIF_PROVIDER: ${{ vars.WATT_AUTO_WIF_PROVIDER }}
+          WIF_SERVICE_ACCOUNT: ${{ vars.WATT_AUTO_WIF_SERVICE_ACCOUNT }}
         run: |
           if [[ ! "$WIF_PROVIDER" =~ ^projects/[0-9]+/locations/global/workloadIdentityPools/[a-zA-Z0-9_-]+/providers/[a-zA-Z0-9_-]+$ ]]; then
             echo 'STOP: Missing or malformed WATT_WIF_PROVIDER' >&2
@@ -77,8 +77,8 @@ jobs:
         uses: google-github-actions/auth@v3
         with:
           project_id: watt-36912
-          workload_identity_provider: ${{ vars.WATT_WIF_PROVIDER }}
-          service_account: ${{ vars.WATT_WIF_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ vars.WATT_AUTO_WIF_PROVIDER }}
+          service_account: ${{ vars.WATT_AUTO_WIF_SERVICE_ACCOUNT }}
           create_credentials_file: true
           export_environment_variables: true
       - name: Install Firebase CLI on ephemeral runner only

@@ -11,10 +11,10 @@
 ## Two-step, OFF-by-default deployment control
 
 Automatic Firebase preview deployment requires all of the following:
-- Repository is private and exactly `Resonance-AppDev/watt-free-pilot` on `refs/heads/main`, event `push`.
+- Repository is private, exact immutable repository ID `1441700773`, and exactly `Resonance-AppDev/watt-free-pilot` on `refs/heads/main`, event `push`.
 - Existing client and Hosting safety checks pass within the auto-preview job.
 - Google Cloud IAM has been reviewed; a dedicated *scoped* service account has Federated Identity access and the reviewer has verified Google Cloud costs and privileges. **Do not enable billing or upgrade this existing Firebase Spark project.**
-- GitHub Actions repository variables `WATT_WIF_PROVIDER` and `WATT_WIF_SERVICE_ACCOUNT` contain the approved non-secret Google resource identifiers. No JSON key is needed.
+- GitHub Actions repository variables `WATT_AUTO_WIF_PROVIDER` and `WATT_AUTO_WIF_SERVICE_ACCOUNT` contain the approved non-secret Google resource identifiers. No JSON key is needed.
 - The **first manual seven-day preview** has been deployed and accepted by real owner/member accounts, with strict room access, cross-device refresh, sign-out, CSP and production-data preservation checked. No persistent test data may be written to production without a separately approved test/cleanup plan.
 - Only after this first acceptance, an authorized operator manually sets both *non-secret* repository variables **`WATT_AUTO_PREVIEW_ENABLED=true`** and **`WATT_PREVIEW_ACCEPTANCE_APPROVED=true`**. Missing/false values keep deployment OFF.
 
@@ -27,12 +27,13 @@ The Google administrator must review a provider condition restricted to immutabl
 ```text
 assertion.repository == 'Resonance-AppDev/watt-free-pilot' &&
 assertion.repository_id == '1441700773' &&
+assertion.repository_owner_id == '337308611' &&
 assertion.ref == 'refs/heads/main' &&
 assertion.event_name == 'push' &&
 assertion.workflow_ref == 'Resonance-AppDev/watt-free-pilot/.github/workflows/firebase-auto-preview.yml@refs/heads/main'
 ```
 
-Map `google.subject=assertion.sub,attribute.repository=assertion.repository` and review all actual token claims before creating or changing Google Cloud IAM. **Do not widen the manual workflow's `workflow_dispatch` admission to all push workflows, forks, or entire organizations.** A separate provider with this exact restricted condition is preferable for auditable isolation. If using separate WIF providers, configure the `WATT_WIF_PROVIDER` variable for the provider intended for automatic previews; the manual provider may then need to remain separate. Protect the main branch and the deployment workflow before enabling automatic preview.
+Map `google.subject=assertion.sub,attribute.repository=assertion.repository` and review all actual token claims before creating or changing Google Cloud IAM. **Do not widen the manual workflow's `workflow_dispatch` admission to all push workflows, forks, or entire organizations.** A separate provider with this exact restricted condition is preferable for auditable isolation. If using separate WIF providers, configure the `WATT_AUTO_WIF_PROVIDER` for the dedicated push-only provider and `WATT_AUTO_WIF_SERVICE_ACCOUNT` for the reviewed automatic-deployment identity. Keep `WATT_WIF_PROVIDER` and `WATT_WIF_SERVICE_ACCOUNT` for the manual-only preview; never reuse the manual authorization provider for automatic previews. Protect the main branch and the deployment workflow before enabling automatic preview.
 
 Google IAM permissions for Firebase Hosting may include the ability to deploy live, even if this workflow never calls a live endpoint. A shell guard is not an IAM permission boundary. Keep the preview permission review and rollback governance before any authorization.
 
@@ -50,3 +51,9 @@ Google IAM permissions for Firebase Hosting may include the ability to deploy li
 If any IAM variable is missing, tests fail, source hashes disagree, an existing preview channel is found, or the free plan would require billing, **stop**. Review GitHub Actions job summary and deployment logs, never post credentials or real user data there. The automatic preview workflow may show a successful readiness job with a **skipped** deployment; inspect the actual Firebase deployment job before claiming success.
 
 Current release gate: https://github.com/Resonance-AppDev/watt-free-pilot/issues/2
+
+## R06 identity separation and audit
+
+The manual workflow consumes `WATT_WIF_PROVIDER` and `WATT_WIF_SERVICE_ACCOUNT` only. The push-based workflow consumes **different** `WATT_AUTO_WIF_PROVIDER` and `WATT_AUTO_WIF_SERVICE_ACCOUNT` only. Each needs its own reviewed IAM admission for the corresponding `workflow_ref` and event. Manual acceptance does not implicitly grant automatic access. Never set `WATT_AUTO_PREVIEW_ENABLED` or `WATT_PREVIEW_ACCEPTANCE_APPROVED` before the manual preview passes.
+
+An optional `scripts/audit-firebase-cloud-readonly.sh` works in an already authenticated Google Cloud Shell; it only reads project number, billing status, existing enabled APIs and identity pools. The script does not create/enable services, change IAM, upload secrets or deploy Hosting. A 403/permission error means **unknown**, not a successful check. Do not post audit outputs containing private account identifiers in public issues.

@@ -18,3 +18,7 @@ The frontend uses only the **Supabase publishable key**, not the service-role ke
 ## R05 — Automatic preview is explicitly OFF
 
 Automatic tests and one-day private static review artifacts on `main` are permitted. `firebase-auto-preview.yml` runs a readiness report on `main` push but can only request Google OIDC and deploy if **both** `WATT_AUTO_PREVIEW_ENABLED` and `WATT_PREVIEW_ACCEPTANCE_APPROVED` are explicitly set to `true`, two WIF identity variables are present, and the source safety checks pass. Keep these flags unset until Google IAM reviewed and the **first manual Firebase preview has passed** real two-account acceptance. See `docs/AUTOMATED-PREVIEW-OPERATIONS.md`.
+
+## R06 — Manual and automatic federation separated
+
+The manual preview retains `WATT_WIF_PROVIDER` / `WATT_WIF_SERVICE_ACCOUNT`. Automatic push-only preview requires different `WATT_AUTO_WIF_PROVIDER` / `WATT_AUTO_WIF_SERVICE_ACCOUNT`, both independent operator opt-ins and a separate IAM admission restricted to immutable repository and organization IDs. Never reuse the manual provider or loosen its event condition to enable automatic deploys. The Google IAM preflight script is read-only and fails without a valid existing project.

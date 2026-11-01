@@ -22,8 +22,8 @@ test('Automatic preview executes only on private main push with both distinct op
   assert.match(auto,/github.event.repository.private == true/);
   assert.match(auto,/vars.WATT_AUTO_PREVIEW_ENABLED == 'true'/);
   assert.match(auto,/vars.WATT_PREVIEW_ACCEPTANCE_APPROVED == 'true'/);
-  assert.match(auto,/vars.WATT_WIF_PROVIDER != ''/);
-  assert.match(auto,/vars.WATT_WIF_SERVICE_ACCOUNT != ''/);
+  assert.match(auto,/vars.WATT_AUTO_WIF_PROVIDER != ''/);
+  assert.match(auto,/vars.WATT_AUTO_WIF_SERVICE_ACCOUNT != ''/);
   assert.match(auto,/needs: readiness/);
 });
 test('Google OIDC and Firebase operations cannot run until safety preflight',()=>{
@@ -56,4 +56,22 @@ test('IAM federation for automatic previews must be restricted separately',()=>{
   assert.match(guide,/Google Cloud IAM/);
   assert.match(guide,/Do not enable billing/i);
   assert.match(guide,/WATT_PREVIEW_ACCEPTANCE_APPROVED/);
+});
+
+
+test('Manual and automatic identities are deliberately separate',()=>{
+  assert.match(manual,/vars.WATT_WIF_PROVIDER/);
+  assert.match(manual,/vars.WATT_WIF_SERVICE_ACCOUNT/);
+  assert.doesNotMatch(manual,/WATT_AUTO_WIF_/);
+  assert.match(auto,/vars.WATT_AUTO_WIF_PROVIDER/);
+  assert.match(auto,/vars.WATT_AUTO_WIF_SERVICE_ACCOUNT/);
+  assert.doesNotMatch(auto,/vars.WATT_WIF_PROVIDER/);
+  assert.match(auto,/github.repository_id == '1441700773'/);
+  assert.match(manual,/github.repository_id == '1441700773'/);
+});
+test('Automated provider guide restricts immutable organization and exact workflow',()=>{
+  assert.match(guide,/assertion.repository_owner_id == '337308611'/);
+  assert.match(guide,/assertion.workflow_ref == 'Resonance-AppDev\/watt-free-pilot\/.github\/workflows\/firebase-auto-preview.yml@refs\/heads\/main'/);
+  assert.match(guide,/WATT_AUTO_WIF_PROVIDER/);
+  assert.match(guide,/WATT_AUTO_WIF_SERVICE_ACCOUNT/);
 });

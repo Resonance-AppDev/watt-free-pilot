@@ -44,3 +44,7 @@ A separate manual GitHub OIDC Workload Identity Federation workflow is available
 ## R05 — Automatic workflow with locked preview gate
 
 `ci.yml` now runs for every PR/push to main and uploads a one-day private static review artifact after a successful `main` push. The new `firebase-auto-preview.yml` reports readiness automatically and **SKIPS all Firebase access by default**. To permit automatic, temporary previews after the initial manual real-account acceptance and audited Google WIF configuration, an operator must explicitly set **both** `WATT_AUTO_PREVIEW_ENABLED=true` and `WATT_PREVIEW_ACCEPTANCE_APPROVED=true` plus the approved WIF resource identifiers. No live deploy ever runs. See `docs/AUTOMATED-PREVIEW-OPERATIONS.md`.
+
+## R06 — Isolated preview identity (not authenticated)
+
+Manual `workflow_dispatch` uses `WATT_WIF_PROVIDER` / `WATT_WIF_SERVICE_ACCOUNT`; post-acceptance automatic `push` preview uses `WATT_AUTO_WIF_PROVIDER` / `WATT_AUTO_WIF_SERVICE_ACCOUNT`. Do not reuse the IAM admission provider: these are distinct event/workflow trusts. A read-only eligibility audit is at `scripts/audit-firebase-cloud-readonly.sh`. Neither credential set nor Google Cloud access has been configured by this update; Firebase remains undeployed.
