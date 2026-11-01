@@ -1,0 +1,44 @@
+name: WATT Firebase — guarded preview ONLY
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type PREVIEW_ONLY to deploy a new seven-day preview channel (never live)'
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: watt-firebase-preview-protected
+  cancel-in-progress: false
+jobs:
+  firebase-review:
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'PREVIEW_ONLY'
+    name: New Firebase Hosting preview; live channel never targeted
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout (no write credentials)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify payload and tests BEFORE cloud auth
+        run: |
+          sha256sum -c HOSTING-PAYLOAD.sha256
+          npm run check
+          npm run build
+          node --test tests/github-integration.test.mjs
+      - name: Authenticate scoped Google service account
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: watt-36912
+          credentials_json: '${{ secrets.WATT_FIREBASE_PREVIEW_SERVICE_ACCOUNT }}'
+          export_environment_variables: true
+      - name: Install Firebase CLI (runner only)
+        run: npm install --global firebase-tools
+      - name: Deploy fresh PREVIEW channel only — fail closed
+        run: bash scripts/github-preview-only.sh

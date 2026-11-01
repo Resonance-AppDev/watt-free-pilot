@@ -1,0 +1,3 @@
+# Deployment tool availability — 2026-11-01
+
+This ChatGPT session can work with the user-owned WATT archives, source tests and Supabase read-only project inspections, but its connected Firebase plugin did not expose an executable deploy/project-management tool, and the execution runtime had no authenticated Firebase CLI. Prior user-owned deployment records establish the existing `watt-36912` ID and historical Hosting preview channels; they do not establish the ability to deploy in this session. The guarded deployment action is provided as a shell script for **authenticated Google Cloud Shell**. Do not claim any Firebase channel was deployed without a `firebase hosting:channel:deploy` success response and a checked URL.

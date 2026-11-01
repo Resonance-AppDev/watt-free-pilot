@@ -1,0 +1,40 @@
+<!doctype html><html lang="en-ZA"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b121d"><meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<title>WATT Free Pilot · Private workspace</title><link rel="stylesheet" href="/assets/site.css">
+</head><body class="workspace-page">
+<a class="skip-link" href="#main">Skip to workspace</a>
+<header class="site-header"><div class="header-inner wrap"><a class="brand" href="/" aria-label="WATT home"><span class="brand-mark">W</span><span>WATT<span class="brand-dot">.</span></span></a><span class="workspace-tag">FREE · INVITE-ONLY</span><a class="header-action" href="/" aria-label="Back to WATT homepage">Home ↗</a></div></header>
+<main id="main" class="workspace-main wrap">
+<section class="workspace-intro"><p class="eyebrow">PRIVATE ROOMS · HUMAN MESSAGING</p><h1>Your WATT workspace.</h1><p>One secure conversation space for your existing account. New rooms and messages remain within WATT's existing Supabase pilot.</p></section>
+<div id="status" class="system-status" role="status" aria-live="polite"><span aria-hidden="true">◈</span><span id="status-text">Sign in with an existing enrolled WATT account.</span></div>
+<section id="login-view" class="login-layout" aria-label="Sign in">
+  <form id="login-form" class="login-form" autocomplete="on">
+    <h2>Welcome back</h2><p>Enter your approved pilot credentials to access private rooms.</p>
+    <label for="email">Enrolled email</label><input id="email" name="email" type="email" autocomplete="username" maxlength="254" required placeholder="you@example.com">
+    <label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required>
+    <label class="acknowledge"><input id="pilot-acknowledge" type="checkbox" required><span>I understand this is an invite-only pilot with human messaging, no automatic AI responses or paid services. <a href="/legal/" target="_blank" rel="noopener noreferrer">Read the pilot notice</a>.</span></label>
+    <button id="login-submit" type="submit" class="button button-primary full">Sign in securely <span aria-hidden="true">→</span></button>
+    <small class="form-note">Your access token is kept in this tab's memory, not local storage. Sign-in uses Supabase Auth over HTTPS.</small>
+  </form>
+  <aside class="login-context"><span class="context-icon">◇</span><h2>One account. Same WATT.</h2><p>Existing rooms and messages are not copied to Firebase. Firebase serves only this frontend; your approved Supabase backend remains the source of truth.</p>
+  <ul class="checks"><li>Server-checked room membership</li><li>Up to 2 owned rooms per account</li><li>Up to 6 participants per room</li><li>No payment or automatic AI posting</li></ul></aside>
+</section>
+<section id="app-view" hidden aria-label="Signed-in WATT Free Pilot">
+  <div class="session-bar"><div><span class="online-dot"></span>Connected as <strong id="account-email"></strong></div><button id="sign-out" type="button" class="button button-outline small-button">Sign out & clear</button></div>
+  <div class="free-toolbar"><div><span class="free-pill">R0 FREE PILOT</span><small>2 owned rooms · 6 participants per room · 1,000 messages per room</small></div><div class="toolbar-actions"><button id="show-create" type="button" class="button button-primary small-button" aria-expanded="false">+ New room</button><button id="show-join" type="button" class="button button-outline small-button" aria-expanded="false">Join with code</button></div></div>
+  <form id="create-form" class="action-form" hidden><h2>Create a private room</h2><p>Room limits are enforced by Supabase. A newly created room starts with AI disabled.</p><div class="form-grid"><label>Room title<input name="title" required maxlength="80" placeholder="Ideas & decisions"></label><label>Your display name<input name="name" required maxlength="40" placeholder="How others see you"></label></div><button type="submit" class="button button-primary small-button">Create room</button></form>
+  <form id="join-form" class="action-form" hidden><h2>Join an existing room</h2><p>Only an already enrolled account can use a private invitation code.</p><div class="form-grid"><label>Invitation code<input name="token" required maxlength="64" minlength="64" spellcheck="false" autocomplete="off" placeholder="64-character code"></label><label>Your display name<input name="name" required maxlength="40" placeholder="Your name in the room"></label></div><button type="submit" class="button button-primary small-button">Join room</button></form>
+  <div id="work-grid" class="work-grid">
+    <aside class="room-sidebar" aria-label="Your rooms"><div class="side-heading"><strong>◎ Your rooms</strong><span id="room-count">0</span></div><div id="room-list" class="room-list" role="group" aria-label="Select a room"></div><button id="refresh-rooms" type="button" class="refresh-room-list">↻ Refresh rooms</button>
+      <div id="owner-tools" class="owner-tools" hidden><strong>Owner controls</strong><p>Share invitations privately with enrolled accounts.</p><div class="owner-buttons"><button id="generate-invite" type="button">Generate invite</button><button id="revoke-invites" type="button">Revoke codes</button></div><div id="invite-panel" class="invite-panel" hidden><label for="invite-code">Private invitation code</label><input id="invite-code" readonly autocomplete="off" spellcheck="false"><button type="button" id="copy-invite">Copy code</button><small id="invite-expiry"></small></div></div>
+    </aside>
+    <section class="conversation" aria-label="Room conversation"><div class="conversation-header"><div><h2 id="room-title">Choose a room</h2><p id="room-description">Your authorized rooms and human conversations</p></div><div class="room-actions"><button id="refresh-messages" class="button button-outline small-button" type="button" disabled>↻ Refresh</button><span class="free-pill">HUMAN CHAT</span></div></div>
+      <div id="messages" class="messages" role="log" aria-live="polite" aria-relevant="additions text"><div class="chat-empty"><div aria-hidden="true">◎</div><strong>Choose a room</strong><p>Your authorized messages will appear here.</p></div></div>
+      <form id="send-form" class="send-form"><label for="message-draft">Message your room</label><textarea id="message-draft" rows="3" maxlength="2000" disabled placeholder="Select a private room to start"></textarea><div class="send-footer"><span id="message-count">0/2,000 · Human messages only. AI automatic posting is OFF.</span><button id="send-button" type="submit" class="button button-primary small-button" disabled>Send message →</button></div></form>
+    </section>
+  </div>
+</section>
+<section class="workspace-disclaimer"><strong>WATT Free Pilot safeguards</strong><p>Private human messaging only. No public signup, paid subscriptions, automated AI replies, evidence publishing, reviewer signing or Sparks. Access control and usage limits are checked on the existing Supabase backend. This frontend does not migrate or duplicate stored conversations.</p></section>
+</main><footer class="site-footer workspace-footer"><div class="wrap">WATT Free Pilot · Firebase static frontend target · Existing Supabase data preserved · Commercial release on hold</div></footer>
+<script type="module" src="/assets/workspace.js"></script></body></html>
