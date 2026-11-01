@@ -1,12 +1,14 @@
 import {rpc,signInWithPassword,normalizeRooms,normalizeRoom,checkMessage,nextPending,friendlyError,isExpired,ROOM_ID,INVITE_CODE} from './core.js';
+import {asksWattAI,canRequestAI,normalizeAiStatus,normalizeAiMessages,mergeUnifiedMessages,requestRoomAiReply,CONSENT_VERSION} from './unified-ai.js';
 
 const $=id=>document.getElementById(id);
 const state={session:null,rooms:[],activeRoomId:null,messages:new Map(),cursors:new Map(),drafts:new Map(),pending:new Map(),
-  roomEpoch:0,loginEpoch:0,action:'',sessionTimer:null,selectedRoom:null};
+  roomEpoch:0,loginEpoch:0,action:'',sessionTimer:null,selectedRoom:null,
+  aiMessages:new Map(),aiStatuses:new Map()};
 function notice(text,warning=false){$('status-text').textContent=text;$('status').classList.toggle('warning',warning);}
 function setBusy(action=''){
   state.action=action;
-  for(const id of ['login-submit','show-create','show-join','refresh-rooms','generate-invite','revoke-invites','copy-invite']){
+  for(const id of ['login-submit','ai-consent','ai-room-switch','ask-watt','show-create','show-join','refresh-rooms','generate-invite','revoke-invites','copy-invite']){
     const el=$(id);if(el)el.disabled=Boolean(action);
   }
   $('message-draft').disabled=Boolean(action)||!state.activeRoomId;
@@ -21,6 +23,7 @@ function tokenSession(){if(isExpired(state.session)){if(state.session)logout('Yo
 function logout(text='Signed out. Your private data was cleared from this tab.'){
   state.loginEpoch++;state.roomEpoch++;state.session=null;state.rooms=[];state.activeRoomId=null;state.selectedRoom=null;
   state.messages.clear();state.cursors.clear();state.drafts.clear();state.pending.clear();
+  state.aiMessages.clear();state.aiStatuses.clear();
   if(state.sessionTimer)clearTimeout(state.sessionTimer);state.sessionTimer=null;
   $('login-view').hidden=false;$('app-view').hidden=true;$('login-form').reset();
   $('create-form').hidden=true;$('join-form').hidden=true;$('invite-panel').hidden=true;
@@ -54,7 +57,7 @@ function renderRooms(){
     const meta=document.createElement('small');meta.textContent=r.role==='owner'?'Owner':'Member';
     btn.append(name,meta);btn.addEventListener('click',()=>{void selectRoom(r.id);});list.append(btn);
   }
-  renderOwner();
+  renderOwner();renderAiControls();
 }
 function clearOwnerInvite(){ $('invite-panel').hidden=true;$('invite-code').value='';$('invite-expiry').textContent=''; }
 function renderOwner(){const room=state.rooms.find(r=>r.id===state.activeRoomId);
@@ -62,13 +65,14 @@ function renderOwner(){const room=state.rooms.find(r=>r.id===state.activeRoomId)
 }
 function renderMessages(){
   const output=$('messages');output.replaceChildren();
-  const room=state.activeRoomId?state.messages.get(state.activeRoomId):null;
+  const room=state.activeRoomId?
+    mergeUnifiedMessages(state.messages.get(state.activeRoomId)??[],state.aiMessages.get(state.activeRoomId)??[]):null;
   if(!state.activeRoomId){const empty=document.createElement('div');empty.className='chat-empty';empty.textContent='Select a private room or create a new room to begin.';output.append(empty);return;}
-  if(!room?.length){const empty=document.createElement('div');empty.className='chat-empty';empty.textContent='No messages yet. Start a human conversation.';output.append(empty);return;}
+  if(!room?.length){const empty=document.createElement('div');empty.className='chat-empty';empty.textContent='No messages yet. Start a conversation with your room.';output.append(empty);return;}
   for(const msg of room){
-    const article=document.createElement('article');article.className='message'+(msg.sender_id===state.session?.id?' mine':'');
+    const article=document.createElement('article');article.className='message'+(msg.kind==='ai'?' ai-message':msg.sender_id===state.session?.id?' mine':'');
     const top=document.createElement('div');top.className='message-head';
-    const who=document.createElement('span');who.textContent=msg.sender_id===state.session?.id?'You':msg.sender_name||'Participant';
+    const who=document.createElement('span');who.textContent=msg.kind==='ai'?'◇ WATT AI · assistant':msg.sender_id===state.session?.id?'You':msg.sender_name||'Participant';
     const date=document.createElement('time');date.dateTime=msg.created_at;
     const d=new Date(msg.created_at);date.textContent=Number.isNaN(d.getTime())?'Sent':d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     const text=document.createElement('p');text.className='message-body';text.textContent=msg.body;
@@ -79,13 +83,50 @@ function renderMessages(){
 function updateComposer(){
   const box=$('message-draft');box.disabled=!state.activeRoomId||Boolean(state.action);
   box.placeholder=state.activeRoomId?'Write a message to this private room…':'Select a private room to start';
-  $('message-count').textContent=String(box.value.length)+'/2,000 · Human messages only. AI automatic posting is OFF.';
+  const status=state.activeRoomId?state.aiStatuses.get(state.activeRoomId):null;
+  $('message-count').textContent=String(box.value.length)+'/2,000 · '+(canRequestAI(status)?'@WATT gets an AI response in this room.':'Human messages available · AI requires consent and pilot activation.');
+  $('ask-watt').disabled=!state.activeRoomId||Boolean(state.action)||!canRequestAI(status);
   $('send-button').disabled=!state.activeRoomId||Boolean(state.action)||!checkMessage(box.value);
   $('refresh-messages').disabled=!state.activeRoomId||Boolean(state.action);
 }
 function showRoomTitle(room){
   $('room-title').textContent=room?.title??'Choose a room';
-  $('room-description').textContent=room?(room.members+' member'+(room.members===1?'':'s')+' · Free Pilot human chat'):'Your private WATT conversations';
+  $('room-description').textContent=room?(room.members+' member'+(room.members===1?'':'s')+' · Private human + optional AI chat'):'Your private WATT conversations';
+}
+function renderAiControls(){
+  const id=state.activeRoomId,room=state.rooms.find(r=>r.id===id);
+  const panel=$('ai-controls');panel.hidden=!id||!room;
+  if(panel.hidden)return;
+  const status=state.aiStatuses.get(id);
+  $('ai-status').textContent=!status?'Checking room AI availability…':
+    !status.ready?'AI responses are not activated on this pilot server. Human chat is available.':
+    !status.myConsent?'Your consent is required to include WATT AI in room messages.':
+    !status.enabled?'AI not enabled. Members consenting: '+status.consented+'/'+status.members+'.':
+    status.consented<status.members?'Waiting for all room members to consent ('+status.consented+'/'+status.members+').':
+    'WATT AI ready · mention @WATT from the same message box.';
+  $('ai-consent').textContent=status?.myConsent?'Withdraw AI consent':'Allow AI in this room';
+  $('ai-consent').disabled=Boolean(state.action)||!status;
+  const owner=Boolean(room?.role==='owner');
+  $('ai-room-switch').hidden=!owner;
+  $('ai-room-switch').textContent=status?.enabled?'Disable WATT AI':'Enable WATT AI';
+  $('ai-room-switch').disabled=Boolean(state.action)||!status||(!status.enabled&&
+    (!status.ready||!status.myConsent||status.consented!==status.members));
+  updateComposer();
+}
+async function refreshAiRoom(id,s,epoch){
+  if(state.session!==s||state.activeRoomId!==id||state.roomEpoch!==epoch)return;
+  try{
+    const status=normalizeAiStatus(await rpc('watt_ai_room_status',{p_room_id:id},s.token));
+    if(state.session!==s||state.activeRoomId!==id||state.roomEpoch!==epoch)return;
+    state.aiStatuses.set(id,status);renderAiControls();
+    const data=normalizeAiMessages(await rpc('watt_ai_get_room_messages',{p_room_id:id,p_after_id:0,p_limit:50},s.token),id);
+    if(state.session!==s||state.activeRoomId!==id||state.roomEpoch!==epoch)return;
+    state.aiMessages.set(id,data);renderMessages();
+  }catch(e){
+    if(state.session!==s||state.activeRoomId!==id||state.roomEpoch!==epoch)return;
+    state.aiStatuses.delete(id);state.aiMessages.delete(id);renderAiControls();
+    // Never expose partial AI history if permission or data validation fails.
+  }
 }
 async function loadRoom(id){
   const s=tokenSession();if(!s||id!==state.activeRoomId)return;
@@ -101,11 +142,13 @@ async function loadRoom(id){
     const merged=[...map.values()].sort((a,b)=>a.id-b.id).slice(-200);
     state.messages.set(id,merged);state.cursors.set(id,result.cursor);
     showRoomTitle(result);renderMessages();
+    await refreshAiRoom(id,s,request);
     notice(result.messages.length===50&&after>0?'Room refreshed. Additional newer messages may be available; refresh again.':'Connected · Your private room is synchronized.');
   }catch(e){if(state.session!==s||state.activeRoomId!==id||request!==state.roomEpoch)return;
     if(e?.code==='AUTH_REQUIRED'||e?.status===401||e?.code==='USER_NOT_ALLOWED'){logout(friendlyError(e));return;}
     if(e?.code==='MEMBERSHIP_REQUIRED'){
       state.messages.delete(id);state.cursors.delete(id);state.pending.delete(id);state.drafts.delete(id);
+      state.aiMessages.delete(id);state.aiStatuses.delete(id);
       state.rooms=state.rooms.filter(r=>r.id!==id);state.activeRoomId=null;state.roomEpoch++;
       $('message-draft').value='';clearOwnerInvite();renderRooms();showRoomTitle(null);renderMessages();updateComposer();
     }
@@ -119,7 +162,7 @@ async function selectRoom(id){
   state.roomEpoch++;state.activeRoomId=id;
   $('message-draft').value=state.drafts.get(id)??'';clearOwnerInvite();renderRooms();
   const room=state.rooms.find(r=>r.id===id);showRoomTitle({title:room?.title??'Private room',members:0});
-  renderMessages();updateComposer();await loadRoom(id);
+  renderMessages();renderAiControls();updateComposer();await loadRoom(id);
 }
 async function refreshRooms(prefer=null){
   const s=tokenSession();if(!s)return;
@@ -130,6 +173,7 @@ async function refreshRooms(prefer=null){
     const valid=new Set(result.map(r=>r.id));
     for(const id of state.messages.keys())if(!valid.has(id)){
       state.messages.delete(id);state.cursors.delete(id);state.drafts.delete(id);state.pending.delete(id);
+      state.aiMessages.delete(id);state.aiStatuses.delete(id);
     }
     if(state.activeRoomId&&!valid.has(state.activeRoomId)){
       state.activeRoomId=null;state.roomEpoch++;$('message-draft').value='';clearOwnerInvite();
@@ -218,6 +262,31 @@ $('copy-invite').addEventListener('click',async()=>{
   catch{$('invite-code').focus();$('invite-code').select();notice('Select the highlighted code and copy it manually.');}
 });
 $('refresh-rooms').addEventListener('click',()=>{void runAction('rooms',async()=>{await refreshRooms();});});
+$('ai-consent').addEventListener('click',()=>void runAction('ai-consent',async s=>{
+  const id=state.activeRoomId,st=state.aiStatuses.get(id);
+  if(!id||!st)throw {code:'MEMBERSHIP_REQUIRED'};
+  const allowed=!st.myConsent;
+  await rpc('watt_ai_set_member_consent',{p_room_id:id,p_allowed:allowed,p_version:CONSENT_VERSION},s.token);
+  if(state.session!==s||state.activeRoomId!==id)return;
+  await loadRoom(id);
+  notice(allowed?'Your room AI consent is saved. Every member must consent before replies are enabled.':'Your AI consent was withdrawn; AI replies are blocked for this room.');
+}));
+$('ai-room-switch').addEventListener('click',()=>void runAction('ai-switch',async s=>{
+  const id=state.activeRoomId,st=state.aiStatuses.get(id);
+  if(!id||!st||!st.owner)throw {code:'OWNER_REQUIRED'};
+  const enable=!st.enabled;
+  if(enable&&!canRequestAI({...st,enabled:true}))throw {code:'CONSENT_INCOMPLETE'};
+  const result=await rpc('watt_ai_set_room_enabled',{p_room_id:id,p_enabled:enable},s.token);
+  if(result?.ok!==true)throw {code:result?.code||'WORKER_NOT_READY'};
+  if(state.session!==s||state.activeRoomId!==id)return;
+  await loadRoom(id);
+  notice(enable?'WATT AI enabled for consenting room members.':'WATT AI disabled in this room.');
+}));
+$('ask-watt').addEventListener('click',()=>{
+  if(!canRequestAI(state.aiStatuses.get(state.activeRoomId)))return;
+  const box=$('message-draft');if(!asksWattAI(box.value))box.value='@WATT '+box.value;
+  box.focus();updateComposer();
+});
 $('refresh-messages').addEventListener('click',()=>{if(state.activeRoomId)void loadRoom(state.activeRoomId);});
 $('message-draft').addEventListener('input',e=>{
   if(state.activeRoomId)state.drafts.set(state.activeRoomId,e.currentTarget.value);
@@ -226,6 +295,7 @@ $('message-draft').addEventListener('input',e=>{
 $('send-form').addEventListener('submit',e=>{
   e.preventDefault();void runAction('send',async s=>{
     const id=state.activeRoomId,body=$('message-draft').value;
+    const wantsAI=asksWattAI(body),aiReady=canRequestAI(state.aiStatuses.get(id));
     if(!id||!state.rooms.some(r=>r.id===id))throw {code:'MEMBERSHIP_REQUIRED'};
     if(!checkMessage(body))throw {code:'BAD_INPUT'};
     const pending=nextPending(state.pending.get(id),body);state.pending.set(id,pending);
@@ -234,7 +304,17 @@ $('send-form').addEventListener('submit',e=>{
     if(!Number.isSafeInteger(Number(res?.message?.id))||Number(res.message.id)<=0)throw {code:'INVALID_RESPONSE'};
     state.pending.delete(id);state.drafts.delete(id);
     if(state.activeRoomId===id){$('message-draft').value='';updateComposer();await loadRoom(id);}
-    notice(res.duplicate?'Message already saved; safely synchronized without a duplicate.':'Message saved. The conversation was synchronized.');
+    if(wantsAI&&aiReady){
+      const sessionStillValid=state.session===s&&state.activeRoomId===id;
+      if(!sessionStillValid)return;
+      // Exactly one worker attempt per saved message. Database unique trigger ID
+      // prevents a duplicate provider call on retries.
+      await requestRoomAiReply(s.token,id,res.message.id);
+      if(state.session===s&&state.activeRoomId===id)await loadRoom(id);
+      notice('WATT AI replied in this same room.');
+    }else notice(wantsAI?
+      'Message saved for the room. AI is not enabled or all-member consent is incomplete.':
+      res.duplicate?'Message already saved; safely synchronized without a duplicate.':'Message saved. The conversation was synchronized.');
   });
 });
 document.addEventListener('visibilitychange',()=>{
