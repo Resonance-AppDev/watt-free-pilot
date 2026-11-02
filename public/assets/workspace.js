@@ -295,7 +295,10 @@ $('message-draft').addEventListener('input',e=>{
 $('send-form').addEventListener('submit',e=>{
   e.preventDefault();void runAction('send',async s=>{
     const id=state.activeRoomId,body=$('message-draft').value;
-    const wantsAI=asksWattAI(body),aiReady=canRequestAI(state.aiStatuses.get(id));
+    const aiReady=canRequestAI(state.aiStatuses.get(id));
+    // When a room explicitly enables WATT AI and every member consents,
+    // ordinary human messages also trigger a reply without per-message approval.
+    const wantsAI=aiReady;
     if(!id||!state.rooms.some(r=>r.id===id))throw {code:'MEMBERSHIP_REQUIRED'};
     if(!checkMessage(body))throw {code:'BAD_INPUT'};
     const pending=nextPending(state.pending.get(id),body);state.pending.set(id,pending);
@@ -309,9 +312,15 @@ $('send-form').addEventListener('submit',e=>{
       if(!sessionStillValid)return;
       // Exactly one worker attempt per saved message. Database unique trigger ID
       // prevents a duplicate provider call on retries.
-      await requestRoomAiReply(s.token,id,res.message.id);
-      if(state.session===s&&state.activeRoomId===id)await loadRoom(id);
-      notice('WATT AI replied in this same room.');
+      try {
+        await requestRoomAiReply(s.token,id,res.message.id);
+        if(state.session===s&&state.activeRoomId===id)await loadRoom(id);
+        notice('WATT AI replied in this same room.');
+      } catch (error) {
+        // Human messages are already committed. An AI failure must not imply
+        // that the message failed or invite duplicate human sends.
+        if(state.session===s)notice('Human message saved. '+friendlyError(error),true);
+      }
     }else notice(wantsAI?
       'Message saved for the room. AI is not enabled or all-member consent is incomplete.':
       res.duplicate?'Message already saved; safely synchronized without a duplicate.':'Message saved. The conversation was synchronized.');
