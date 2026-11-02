@@ -1,4 +1,4 @@
-// R15: deterministic selection for a consented, quota-bounded free AI response poll.
+// R15: deterministic selection for a consented, provider-allowance-aware free AI response poll.
 // No provider calls, secrets, database mutations or release activation occur here.
 export const FREE_PROVIDER_IDS=Object.freeze(['groq','gemini','openrouter']);
 export const MAX_POLL_RESPONSES=3;
@@ -8,13 +8,12 @@ export function selectFreeCandidates(providers,{maxResponses=MAX_POLL_RESPONSES}
   const seen=new Set();
   return providers.filter(p=>{
     if(!p||typeof p!=='object'||!FREE_PROVIDER_IDS.includes(p.id)||seen.has(p.id))return false;
-    seen.add(p.id);
     return p.verifiedFreeTier===true&&p.providerConsent===true&&p.allRoomMembersConsented===true&&
       p.enabled===true&&p.credentialConfigured===true&&
       int(p.remainingRequests)&&p.remainingRequests>0&&
       int(p.remainingTokens)&&p.remainingTokens>0&&
       p.releaseApproved===true&&typeof p.model==='string'&&p.model.trim().length>0;
-  }).sort((a,b)=>FREE_PROVIDER_IDS.indexOf(a.id)-FREE_PROVIDER_IDS.indexOf(b.id))
+  }).filter(p=>{if(seen.has(p.id))return false;seen.add(p.id);return true;}).sort((a,b)=>FREE_PROVIDER_IDS.indexOf(a.id)-FREE_PROVIDER_IDS.indexOf(b.id))
     .slice(0,maxResponses).map(p=>({id:p.id,model:p.model}));
 }
 export function formatFreePoll(results){
