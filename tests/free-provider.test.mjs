@@ -12,7 +12,7 @@ test('R13 free-model selection is fixed, not caller-controlled',()=>{
  assert.deepEqual(FREE_LIMITS,{requestsPerMinute:30,requestsPerDay:1000,tokensPerMinute:8000,tokensPerDay:200000});
 });
 test('R13 sends only explicit @WATT prompts to the AI provider',()=>{
- for(const s of ['normal chat','What is Watt?','@WATTAGE','@WATT\n'.repeat(200)])assert.equal(isExplicitWattRequest(s),false);
+ for(const s of ['normal chat','What is Watt?','@WATTAGE','@WATT\n'.repeat(400)])assert.equal(isExplicitWattRequest(s),false);
  assert.equal(isExplicitWattRequest('@WATT Can you help?'),true);
  assert.equal(isExplicitWattRequest('  @watt, hi'),true);
  assert.throws(()=>makeFreeProviderRequest('ordinary chat'),/EXPLICIT_AI_TRIGGER_REQUIRED/);
