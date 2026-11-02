@@ -43,3 +43,10 @@ test('refuses unverified free tier or closed release without network activity',a
  }
  assert.equal(calls,0);
 });
+test('aborts oversized streaming responses before reading the entire payload',async()=>{
+ let reads=0,cancelled=false;
+ const result=await executeFreeProvider({...base,fetchImpl:async()=>({ok:true,body:{getReader:()=>({read:async()=>{reads++;return {done:false,value:new Uint8Array(40000)};},cancel:async()=>{cancelled=true;},releaseLock:()=>{}})}})});
+ assert.equal(result.code,'UPSTREAM_TOO_LARGE');
+ assert.equal(reads,2);
+ assert.equal(cancelled,true);
+});
