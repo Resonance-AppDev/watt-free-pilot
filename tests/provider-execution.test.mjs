@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {executeFreeProvider} from '../edge/watt-ai-room-worker/provider-execution.mjs';
-const base={provider:'groq',model:'llama-3.1-8b-instant',prompt:'Hello',credential:'test-key',jobId:'job-1',reservation:{committed:true,provider:'groq',jobId:'job-1',reservationId:'r-1'}};
+const base={verifiedFreeTier:true,releaseApproved:true,provider:'groq',model:'llama-3.1-8b-instant',prompt:'Hello',credential:'test-key',jobId:'job-1',reservation:{committed:true,provider:'groq',jobId:'job-1',reservationId:'r-1'}};
 test('refuses missing or mismatched committed reservations without calling provider',async()=>{
  let called=0;const fetchImpl=async()=>{called++;throw Error('unexpected');};
  for(const reservation of [null,{...base.reservation,committed:false},{...base.reservation,provider:'gemini'},{...base.reservation,jobId:'other'}]){
