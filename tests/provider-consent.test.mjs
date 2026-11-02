@@ -33,3 +33,13 @@ test('R14 worker has three server consent checks and no live provider activation
  assert.match(src,/freeAccountSelected/);
  assert.doesNotMatch(src,/const RELEASE_GATE_OPEN = true;/);
 });
+
+test('R14 review worker origin matches actual R12 preview and rejects other sites',()=>{
+ const src=fs.readFileSync('edge/watt-ai-room-worker/index.ts','utf8');
+ assert.match(src,/watt-r12-unified-ai-review-/);
+ const pattern=/^https:\/\/watt-36912--watt-r12-unified-ai-review-[a-z0-9]+\.web\.app$/;
+ assert.equal(pattern.test('https://watt-36912--watt-r12-unified-ai-review-imn2zctx.web.app'),true);
+ assert.equal(pattern.test('https://watt-36912.web.app'),false);
+ assert.equal(pattern.test('https://watt-36912--watt-r13-unified-ai-review-abc.web.app'),false);
+ assert.equal(pattern.test('https://attacker-watt-36912--watt-r12-unified-ai-review-imn2zctx.web.app'),false);
+});
