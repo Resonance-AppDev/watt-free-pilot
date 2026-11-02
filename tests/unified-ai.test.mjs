@@ -82,6 +82,15 @@ test('unified UI uses DOM text content and never stores keys or tokens',()=>{
  assert.doesNotMatch(ws+cli,/localStorage|sessionStorage|indexedDB|OPENAI_API_KEY|api\.openai\.com|sb_secret_|service_role/);
 });
 
+test('automatic replies use room consent and preserve committed human messages',()=>{
+ const ws=fs.readFileSync('public/assets/workspace.js','utf8');
+ assert.match(ws,/const wantsAI=aiReady;/);
+ assert.match(ws,/if\(wantsAI&&aiReady\)/);
+ assert.match(ws,/Human message saved/);
+ assert.match(ws,/WATT AI ready · replies automatically in this room/);
+ assert.doesNotMatch(ws,/const wantsAI=asksWattAI\(body\)/);
+});
+
 test('backend staging build cannot call OpenAI or publish replies',()=>{
  const worker=fs.readFileSync('edge/watt-ai-room-worker/index.ts','utf8');
  const preview=fs.readFileSync('03-Preview-Unified-AI.sh','utf8');
