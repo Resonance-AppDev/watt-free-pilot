@@ -63,3 +63,4 @@ b59a1a9c56156baef1aaf52e03f2633a0a4ad4394bb2a5f032d8434e19109e58  docs/R15-FREE-
 b1f3493f3ab84b15a9d52f9119c8afc7cb4e889ae367ca58718ee3f0b256b3a4  edge/watt-ai-room-worker/free-poll-quota.mjs
 5f78cffb7f6842eb6174c8f7ec93eb065de274aac8befa08fdb397281493b465  tests/free-poll-quota.test.mjs
 6160a38c1d44f81ecd9f5e290aaacb85d44a121ee0de063a28531ffdedebb5df  docs/R15-CLOUD-INTEGRATION-CONTRACT.md
+00a05fbea7c0dfb3d447f5886e8e49bbdb8398bf63174b7ad7ed4bff9ea11e46  migrations/r15_remove_ai_job_daily_cap_review.sql
