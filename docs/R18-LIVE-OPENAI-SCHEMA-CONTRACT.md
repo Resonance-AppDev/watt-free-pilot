@@ -39,6 +39,6 @@ The existing reservation table also has no model, requester, room, consent-versi
 
 No changes were made to Supabase project data, schema, functions or secrets. No GitHub CI/CD workflow or Firebase hosting deployment was triggered by this R18 source-only contract. The production worker release gate remains closed. Do not deploy the R17 adapter or any R18 work until the database migration and security review are complete.
 
-## Development database branch
+## Development database branch and cost boundary
 
-A separate Supabase development branch was requested for isolated schema work. Supabase quoted **USD 0.01344 per hour**. Creation is pending explicit cost approval. No branch was created.
+No separate Supabase development branch was created. The quoted branch compute cost was **USD 0.01344 per hour**; the user directed that work continue on the existing GitHub branch to avoid this recurring cost. All schema work remains staged as source-only SQL and review material in GitHub. Do not create a Supabase branch or apply migrations to the live project unless separately authorized after cost and data-safety review.
