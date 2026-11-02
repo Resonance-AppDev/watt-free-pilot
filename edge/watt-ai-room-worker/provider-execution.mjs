@@ -6,8 +6,8 @@ const ENDPOINTS=Object.freeze({
  openrouter:'https://openrouter.ai/api/v1/chat/completions'
 });
 const MODELS=/^[a-zA-Z0-9._:/-]{1,120}$/;
-export async function executeFreeProvider({provider,model,prompt,credential,reservation,jobId,fetchImpl=fetch,timeoutMs=18000}){
- if(!Object.hasOwn(ENDPOINTS,provider)||!MODELS.test(model||'')||typeof prompt!=='string'||!prompt.trim()||prompt.length>2000||
+export async function executeFreeProvider({provider,model,prompt,credential,reservation,jobId,verifiedFreeTier=false,releaseApproved=false,fetchImpl=fetch,timeoutMs=18000}){
+ if(verifiedFreeTier!==true||releaseApproved!==true||!Object.hasOwn(ENDPOINTS,provider)||!MODELS.test(model||'')||typeof prompt!=='string'||!prompt.trim()||prompt.length>2000||
  typeof credential!=='string'||!credential||typeof jobId!=='string'||!jobId||
  !reservation||reservation.committed!==true||reservation.provider!==provider||reservation.jobId!==jobId||
  typeof reservation.reservationId!=='string'||!reservation.reservationId||
