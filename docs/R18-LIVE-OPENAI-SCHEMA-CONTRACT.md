@@ -41,4 +41,4 @@ No changes were made to Supabase project data, schema, functions or secrets. No 
 
 ## Development database branch and cost boundary
 
-No separate Supabase development branch was created. The quoted branch compute cost was **USD 0.01344 per hour**; the user directed that work continue on the existing GitHub branch to avoid this recurring cost. All schema work remains staged as source-only SQL and review material in GitHub. Do not create a Supabase branch or apply migrations to the live project unless separately authorized after cost and data-safety review.
+No separate Supabase development branch was created. The quoted branch compute cost was **USD 0.01344 per hour**; the user directed that work continue on the existing GitHub branch to avoid this recurring cost. Schema work remains staged as source-only design and review material in GitHub; the executable migration is blocked pending restoration of canonical migration provenance. Do not create a Supabase branch or apply migrations to the live project unless separately authorized after cost and data-safety review.
