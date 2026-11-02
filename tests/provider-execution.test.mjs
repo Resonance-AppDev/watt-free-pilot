@@ -16,7 +16,7 @@ test('Groq request is bounded and returns provider text',async()=>{
   assert.equal(JSON.parse(init.body).model,base.model);
   return {ok:true,text:async()=>JSON.stringify({choices:[{message:{content:'Hello from Groq'}}]})};
  }});
- assert.deepEqual(result,{ok:true,provider:'groq',model:base.model,text:'Hello from Groq'});
+ assert.deepEqual(result,{ok:true,provider:'groq',model:base.model,text:'Hello from Groq',usage:null,rateLimit:null});
 });
 test('Gemini uses API key header and extracts content parts',async()=>{
  const result=await executeFreeProvider({...base,provider:'gemini',model:'gemini-2.0-flash',reservation:{...base.reservation,provider:'gemini'},fetchImpl:async(url,init)=>{
@@ -49,4 +49,14 @@ test('aborts oversized streaming responses before reading the entire payload',as
  assert.equal(result.code,'UPSTREAM_TOO_LARGE');
  assert.equal(reads,2);
  assert.equal(cancelled,true);
+});
+
+test('returns provider-reported token counts and observed rate-limit headers',async()=>{
+ const result=await executeFreeProvider({...base,fetchImpl:async()=>({ok:true,headers:{get:(name)=>name==='x-ratelimit-remaining-requests'?'17':null},text:async()=>JSON.stringify({choices:[{message:{content:'OK'}}],usage:{prompt_tokens:12,completion_tokens:4}})})});
+ assert.deepEqual(result.usage,{inputTokens:12,outputTokens:4});
+ assert.deepEqual(result.rateLimit,{remainingRequests:17,sourceHeader:'x-ratelimit-remaining-requests'});
+});
+test('invalid provider usage does not invent token counts',async()=>{
+ const result=await executeFreeProvider({...base,fetchImpl:async()=>({ok:true,text:async()=>JSON.stringify({choices:[{message:{content:'OK'}}],usage:{prompt_tokens:-1,completion_tokens:2}})})});
+ assert.equal(result.usage,null);
 });
