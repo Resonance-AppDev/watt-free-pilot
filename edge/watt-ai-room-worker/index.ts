@@ -2,7 +2,7 @@
 // The compile-time release gate is intentionally false and must not be changed
 // until provider account tier, room authorization, quotas and release checks pass.
 import {GROQ_FREE_ENDPOINT,makeFreeProviderRequest,parseFreeProviderResponse,isExplicitWattRequest,freeAccountSelected} from './free-provider.mjs';
-import {allMembersApprovedForGroq,GROQ_CONSENT_VERSION} from './provider-consent.mjs';
+import {allMembersApprovedForGroq} from './provider-consent.mjs';
 declare const Deno: {serve: (f: (request: Request) => Promise<Response>) => void; env: {get: (k: string) => string | undefined}};
 const RELEASE_GATE_OPEN = false;
 const PROJECT = 'https://qylyuijjeruvbxipnrgh.supabase.co';
