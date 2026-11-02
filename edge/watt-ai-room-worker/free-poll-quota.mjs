@@ -1,11 +1,11 @@
-// R15 quota decision helpers. These do not reserve database quota or call providers.
-// Callers must atomically reserve each provider's budget server-side before a request.
+// R15 upstream-provider allowance preflight; no WATT-defined user/global daily AI quotas.
+// This is advisory only: a transactional provider-scoped reservation is still required.
 export function quotaDecision(snapshot,estimatedTokens){
  if(!snapshot||typeof snapshot!=='object'||!Number.isSafeInteger(estimatedTokens)||estimatedTokens<1)return {allowed:false,reason:'INVALID_QUOTA'};
- const keys=['remainingRequestsMinute','remainingRequestsDay','remainingTokensMinute','remainingTokensDay','remainingGlobalRequestsDay','remainingUserRequestsDay'];
+ const keys=['remainingRequestsMinute','remainingRequestsDay','remainingTokensMinute','remainingTokensDay'];
  if(keys.some(k=>!Number.isSafeInteger(snapshot[k])||snapshot[k]<0))return {allowed:false,reason:'INVALID_QUOTA'};
- if(snapshot.remainingRequestsMinute<1||snapshot.remainingRequestsDay<1||snapshot.remainingGlobalRequestsDay<1||snapshot.remainingUserRequestsDay<1)return {allowed:false,reason:'REQUEST_QUOTA_EXHAUSTED'};
- if(snapshot.remainingTokensMinute<estimatedTokens||snapshot.remainingTokensDay<estimatedTokens)return {allowed:false,reason:'TOKEN_QUOTA_EXHAUSTED'};
+ if(snapshot.remainingRequestsMinute<1||snapshot.remainingRequestsDay<1)return {allowed:false,reason:'PROVIDER_REQUEST_LIMIT_EXHAUSTED'};
+ if(snapshot.remainingTokensMinute<estimatedTokens||snapshot.remainingTokensDay<estimatedTokens)return {allowed:false,reason:'PROVIDER_TOKEN_LIMIT_EXHAUSTED'};
  return {allowed:true,reason:'ELIGIBLE_FOR_ATOMIC_RESERVATION'};
 }
 export function validateReservation(reservation,provider,jobId){
