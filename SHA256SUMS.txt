@@ -69,3 +69,4 @@ fa4139c486a3948f4ce15bf5dd71ffc8d3226ffff7a8fc248fe912cc42dc0b92  tests/provider
 4d8d1350f1edb944283b9765ff2b7f75573e03ed27463c911cec9e9d8bf29433  tests/consent-readiness.test.mjs
 d528f7f37989b6b5fd2d6e0fc52bbed319df2849cfba9fd996efc5c552f6b784  edge/watt-ai-room-worker/provider-dispatch.mjs
 ad72ed0b53458177ad950d9ee2955398fb3959d93ae69e42152eebb38a8b222b  tests/provider-dispatch.test.mjs
+26effa94afab14650ebe234f70b20b4d5a5cac5cfaa3d03051ea8fd7a44d02f7  edge/watt-ai-room-worker/provider-execution.mjs
