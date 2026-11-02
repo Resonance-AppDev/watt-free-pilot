@@ -84,7 +84,7 @@ function updateComposer(){
   const box=$('message-draft');box.disabled=!state.activeRoomId||Boolean(state.action);
   box.placeholder=state.activeRoomId?'Write a message to this private room…':'Select a private room to start';
   const status=state.activeRoomId?state.aiStatuses.get(state.activeRoomId):null;
-  $('message-count').textContent=String(box.value.length)+'/2,000 · '+(canRequestAI(status)?'@WATT gets an AI response in this room.':'Human messages available · AI requires consent and pilot activation.');
+  $('message-count').textContent=String(box.value.length)+'/2,000 · '+(canRequestAI(status)?'WATT AI replies automatically in this room.':'Human messages available · AI requires consent and pilot activation.');
   $('ask-watt').disabled=!state.activeRoomId||Boolean(state.action)||!canRequestAI(status);
   $('send-button').disabled=!state.activeRoomId||Boolean(state.action)||!checkMessage(box.value);
   $('refresh-messages').disabled=!state.activeRoomId||Boolean(state.action);
@@ -103,7 +103,7 @@ function renderAiControls(){
     !status.myConsent?'Your consent is required to include WATT AI in room messages.':
     !status.enabled?'AI not enabled. Members consenting: '+status.consented+'/'+status.members+'.':
     status.consented<status.members?'Waiting for all room members to consent ('+status.consented+'/'+status.members+').':
-    'WATT AI ready · mention @WATT from the same message box.';
+    'WATT AI ready · replies automatically in this room.';
   $('ai-consent').textContent=status?.myConsent?'Withdraw AI consent':'Allow AI in this room';
   $('ai-consent').disabled=Boolean(state.action)||!status;
   const owner=Boolean(room?.role==='owner');
