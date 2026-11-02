@@ -55,7 +55,7 @@ e3322fbb865e43bff294c77257345c86d40c9cd0aab4ce68af791b861803a86c  tests/github-i
 400a8aa4d139bb7fa7528d8e32d94289aec1d6a5ce2a5f77684a6126e14de848  tests/provider-consent.test.mjs
 2d85450192fa426a56753aca6e67afdfd761387888beb24c0d9dc4ed466594d4  tests/unified-ai.test.mjs
 e93df829b0aeb5121efc07bdd8135fdd8eb97a5805080112108abf826e5ea1d9  docs/R14-UNIFIED-AI-IMPLEMENTATION-REVIEW.md
-ce26d3a6c1ce9f4c5c2a39744d21abff0b185cfae16bbfc10afe71f61ff6381e  edge/watt-ai-room-worker/free-poll.mjs
+cfd7edf9431d67fd75625eda596004105d44a02c21a08069d488ccd4a697aba9  edge/watt-ai-room-worker/free-poll.mjs
 d609a3105ae51252654900d3a291b67a5b1b3006f5ca4f7b9cc387915429a0e7  tests/free-ai-poll.test.mjs
 b59a1a9c56156baef1aaf52e03f2633a0a4ad4394bb2a5f032d8434e19109e58  docs/R15-FREE-AI-TOP3-REVIEW.md
 2ae6d424ba3a5bdd3009ac317d5f5817292f15f86bda82f4d7bc19bb5e3ecc3c  edge/watt-ai-room-worker/free-poll-adapters.mjs
