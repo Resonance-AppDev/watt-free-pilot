@@ -58,7 +58,7 @@ test('R13 worker remains gated, refuses ordinary human prompts and only sends se
  assert.match(src,/watt_ai_room_status/);
  assert.match(src,/watt_ai_publish_reply/);
  assert.match(src,/member_count!==fresh\.data\?\.consented_count/);
- assert.match(ui,/If activated, an @WATT message is sent to the displayed AI provider/);
+ assert.match(ui,/If activated, an @WATT message is sent to the room's approved AI provider/);
  assert.doesNotMatch(ui,/GROQ_API_KEY|OPENAI_API_KEY/);
  assert.doesNotMatch(src,/^const RELEASE_GATE_OPEN = true/m);
 });
