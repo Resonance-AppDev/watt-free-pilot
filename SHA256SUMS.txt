@@ -77,4 +77,4 @@ b3066da50027ff6f8045453e4f816c55c79585dd344acf771e6bbd3496855076  tests/provider
 04e2b6509da43f9da24a05303e527a6b22888311f0392f6de7045dd7e1829207  tests/openai-execution-r17.test.mjs
 77f77e93306ba0177246efd3fff619bb2645f14a16c196757ab0a7089e7a54fb  docs/R17-OPENAI-INTEGRATION-GROUNDWORK.md
 8ee686d2fd33ab3a3cac9d82a750da2f82cfda4fdd7f7ca79c0f99c376ef49db  docs/R18-LIVE-OPENAI-SCHEMA-CONTRACT.md
-fbaf675bb330ee9dc3fded9a532ccff5685fddcb3e47ea55e807b395673aff71  tests/openai-r18-live-gate.test.mjs
+791b9df6f0aea069b51ceedc7b57d8cd592e2f6c6778c224ee864038053d5828  tests/openai-r18-live-gate.test.mjs
