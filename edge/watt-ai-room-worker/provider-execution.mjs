@@ -27,8 +27,28 @@ export async function executeFreeProvider({provider,model,prompt,credential,rese
   }
   const response=await fetchImpl(url,{method:'POST',headers,body:JSON.stringify(body),signal:controller.signal});
   if(!response.ok)return {ok:false,provider,code:response.status===429?'UPSTREAM_RATE_LIMIT':'UPSTREAM_UNAVAILABLE'};
-  const raw=await response.text();
-  if(raw.length>65536)return {ok:false,provider,code:'UPSTREAM_TOO_LARGE'};
+  let raw;
+  if(response.body?.getReader){
+   const reader=response.body.getReader(),chunks=[];
+   let total=0;
+   try{
+    while(true){
+     const part=await reader.read();
+     if(part.done)break;
+     total+=part.value.byteLength;
+     if(total>65536){await reader.cancel();return {ok:false,provider,code:'UPSTREAM_TOO_LARGE'};}
+     chunks.push(part.value);
+    }
+   }finally{reader.releaseLock();}
+   const bytes=new Uint8Array(total);
+   let offset=0;
+   for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+   try{raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}
+   catch{return {ok:false,provider,code:'INVALID_PROVIDER_RESPONSE'};}
+  }else{
+   raw=await response.text();
+   if(new TextEncoder().encode(raw).byteLength>65536)return {ok:false,provider,code:'UPSTREAM_TOO_LARGE'};
+  }
   let data;
   try{data=JSON.parse(raw);}catch{return {ok:false,provider,code:'INVALID_PROVIDER_RESPONSE'};}
   const answer=provider==='gemini'?data?.candidates?.[0]?.content?.parts?.map(p=>p?.text||'').join(''):
