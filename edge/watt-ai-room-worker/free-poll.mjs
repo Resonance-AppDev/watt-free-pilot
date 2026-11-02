@@ -13,7 +13,7 @@ export function selectFreeCandidates(providers,{maxResponses=MAX_POLL_RESPONSES}
       p.enabled===true&&p.credentialConfigured===true&&
       int(p.remainingRequests)&&p.remainingRequests>0&&
       int(p.remainingTokens)&&p.remainingTokens>0&&
-      p.releaseApproved===true;
+      p.releaseApproved===true&&typeof p.model==='string'&&p.model.trim().length>0;
   }).sort((a,b)=>FREE_PROVIDER_IDS.indexOf(a.id)-FREE_PROVIDER_IDS.indexOf(b.id))
     .slice(0,maxResponses).map(p=>({id:p.id,model:p.model}));
 }
