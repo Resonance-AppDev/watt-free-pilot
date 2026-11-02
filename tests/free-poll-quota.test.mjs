@@ -1,13 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {quotaDecision,validateReservation} from '../edge/watt-ai-room-worker/free-poll-quota.mjs';
-const full={remainingRequestsMinute:2,remainingRequestsDay:20,remainingTokensMinute:1000,remainingTokensDay:5000,remainingGlobalRequestsDay:20,remainingUserRequestsDay:6};
-test('quota preflight accepts eligible estimates only',()=>assert.equal(quotaDecision(full,500).allowed,true));
-test('every exhausted request bucket denies',()=>{
- for(const key of ['remainingRequestsMinute','remainingRequestsDay','remainingGlobalRequestsDay','remainingUserRequestsDay'])
+const full={remainingRequestsMinute:2,remainingRequestsDay:20,remainingTokensMinute:1000,remainingTokensDay:5000};
+test('provider preflight accepts eligible estimates',()=>assert.equal(quotaDecision(full,500).allowed,true));
+test('upstream provider request limits still apply',()=>{
+ for(const key of ['remainingRequestsMinute','remainingRequestsDay'])
   assert.equal(quotaDecision({...full,[key]:0},100).allowed,false);
 });
-test('both token buckets and malformed snapshots deny',()=>{
+test('WATT user/global daily limits are ignored',()=>{
+ assert.equal(quotaDecision({...full,remainingGlobalRequestsDay:0,remainingUserRequestsDay:0},100).allowed,true);
+});
+test('upstream token limits and malformed snapshots deny',()=>{
  for(const key of ['remainingTokensMinute','remainingTokensDay'])assert.equal(quotaDecision({...full,[key]:99},100).allowed,false);
  assert.equal(quotaDecision({...full,remainingRequestsDay:-1},100).allowed,false);
  assert.equal(quotaDecision(full,0).allowed,false);
