@@ -2,6 +2,7 @@
 // The compile-time release gate is intentionally false and must not be changed
 // until provider account tier, room authorization, quotas and release checks pass.
 import {GROQ_FREE_ENDPOINT,makeFreeProviderRequest,parseFreeProviderResponse,isExplicitWattRequest,freeAccountSelected} from './free-provider.mjs';
+import {allMembersApprovedForGroq,GROQ_CONSENT_VERSION} from './provider-consent.mjs';
 declare const Deno: {serve: (f: (request: Request) => Promise<Response>) => void; env: {get: (k: string) => string | undefined}};
 const RELEASE_GATE_OPEN = false;
 const PROJECT = 'https://qylyuijjeruvbxipnrgh.supabase.co';
@@ -95,6 +96,16 @@ async function markFailed(jobId:unknown,key:string,code:string):Promise<void>{
     'PATCH',{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json','Prefer':'return=representation'},
     {status:'failed',error_code:code,updated_at:new Date().toISOString()},5000);
 }
+async function groqConsentForAll(roomId:string,key:string,count:number):Promise<boolean>{
+  const origin=PROJECT+'/rest/v1/';
+  const headers={apikey:key,Authorization:'Bearer '+key};
+  const scope='&room_id=eq.'+encodeURIComponent(roomId);
+  const [members,consents]=await Promise.all([
+    requestJson(origin+'watt_pilot_members?select=user_id'+scope,'GET',headers,undefined,7000,8000),
+    requestJson(origin+'watt_ai_member_consents?select=user_id,allowed,consent_version'+scope,'GET',headers,undefined,7000,8000)
+  ]);
+  return members.ok&&consents.ok&&allMembersApprovedForGroq(members.data,consents.data,count);
+}
 async function prepareAndRun(roomId:string,messageId:string,userId:string,auth:string):Promise<{status:number;body:any}>{
   const status=await rpc('watt_ai_room_status',{p_room_id:roomId},auth);
   if(!status.ok){
@@ -110,6 +121,8 @@ async function prepareAndRun(roomId:string,messageId:string,userId:string,auth:s
   const key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
   const groq=Deno.env.get('GROQ_API_KEY')||'';
   if(!key||!freeAccountSelected((name:string)=>Deno.env.get(name))||!groq)throw new ClientError(503,'FREE_PROVIDER_NOT_VERIFIED');
+  // Legacy consent explicitly named OpenAI; never reuse it to disclose room text to Groq.
+  if(!await groqConsentForAll(roomId,key,room.member_count))throw new ClientError(403,'PROVIDER_CONSENT_REQUIRED');
   // Inspect ONLY an explicit @WATT message from its author; never load room history.
   const url=PROJECT+'/rest/v1/watt_pilot_messages?select=id,room_id,sender_id,body&id=eq.'+encodeURIComponent(messageId)+'&room_id=eq.'+encodeURIComponent(roomId)+'&limit=1';
   const r=await requestJson(url,'GET',{apikey:key,Authorization:'Bearer '+key},undefined,7000,5000);
@@ -132,12 +145,20 @@ async function prepareAndRun(roomId:string,messageId:string,userId:string,auth:s
        await markFailed(jobId,key,'CONSENT_CHANGED_BEFORE_PROVIDER');
        throw new ClientError(409,'CONSENT_CHANGED');
     }
+    if(!await groqConsentForAll(roomId,key,fresh.data.member_count)){
+      await markFailed(jobId,key,'PROVIDER_CONSENT_CHANGED');
+      throw new ClientError(409,'PROVIDER_CONSENT_CHANGED');
+    }
     const out=await requestJson(GROQ_FREE_ENDPOINT,'POST',
       {Authorization:'Bearer '+groq,'Content-Type':'application/json'},
       makeFreeProviderRequest(msg.body),20000,65536);
     if(!out.ok){await markFailed(jobId,key,'PROVIDER_FAILED');throw new ClientError(502,'PROVIDER_UNAVAILABLE');}
     const draft=parseFreeProviderResponse(out.data);
     if(!draft){await markFailed(jobId,key,'EMPTY_PROVIDER_OUTPUT');throw new ClientError(502,'INVALID_AI_OUTPUT');}
+    if(!await groqConsentForAll(roomId,key,fresh.data.member_count)){
+      await markFailed(jobId,key,'PROVIDER_CONSENT_CHANGED');
+      throw new ClientError(409,'PROVIDER_CONSENT_CHANGED');
+    }
     // Transactional publisher locks room settings and checks every member's consent AGAIN.
     const pub=await rpc('watt_ai_publish_reply',{p_job_id:jobId,p_body:draft},key,true);
     if(!pub.ok||pub.data?.ok!==true){throw new ClientError(409,'PUBLISH_BLOCKED');}
