@@ -40,6 +40,7 @@
           <button id="ai-consent" type="button" class="button button-outline small-button" disabled>Allow AI in room</button>
           <button id="ai-room-switch" type="button" class="button button-outline small-button" hidden disabled>Enable room AI</button>
         </div>
+        <div id="provider-consents" class="ai-controls" aria-label="AI provider-specific permissions" hidden></div>
       </section>
       <form id="send-form" class="send-form"><label for="message-draft">Message your room <span class="ai-helper">· mention @WATT to ask WATT AI</span></label><textarea id="message-draft" rows="3" maxlength="2000" disabled placeholder="Select a private room to start"></textarea><div class="send-footer"><span id="message-count">0/2,000 · Human conversation; WATT AI replies require room consent and activation.</span><div class="send-actions"><button id="ask-watt" type="button" class="button button-outline small-button" disabled>Ask WATT AI</button><button id="send-button" type="submit" class="button button-primary small-button" disabled>Send message →</button></div></div></form>
     </section>

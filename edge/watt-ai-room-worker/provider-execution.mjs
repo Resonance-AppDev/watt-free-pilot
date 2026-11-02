@@ -1,0 +1,61 @@
+import {extractProviderUsage,readProviderRateLimit} from './provider-usage-r16.mjs';
+// R15 provider execution primitive. Call only after provider-dispatch preflight and committed quota reservation.
+// No room history, database writes, implicit retries, paid fallback, or release activation.
+const ENDPOINTS=Object.freeze({
+ groq:'https://api.groq.com/openai/v1/chat/completions',
+ gemini:'https://generativelanguage.googleapis.com/v1beta/models/',
+ openrouter:'https://openrouter.ai/api/v1/chat/completions'
+});
+const MODELS=/^[a-zA-Z0-9._:/-]{1,120}$/;
+export async function executeFreeProvider({provider,model,prompt,credential,reservation,jobId,verifiedFreeTier=false,releaseApproved=false,fetchImpl=fetch,timeoutMs=18000}){
+ if(verifiedFreeTier!==true||releaseApproved!==true||!Object.hasOwn(ENDPOINTS,provider)||!MODELS.test(model||'')||typeof prompt!=='string'||!prompt.trim()||prompt.length>2000||
+ typeof credential!=='string'||!credential||typeof jobId!=='string'||!jobId||
+ !reservation||reservation.committed!==true||reservation.provider!==provider||reservation.jobId!==jobId||
+ typeof reservation.reservationId!=='string'||!reservation.reservationId||
+ !Number.isSafeInteger(timeoutMs)||timeoutMs<1000||timeoutMs>30000)throw new TypeError('DISPATCH_NOT_AUTHORIZED');
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),timeoutMs);
+ try{
+  let url,headers,body;
+  if(provider==='gemini'){
+   url=ENDPOINTS.gemini+encodeURIComponent(model)+':generateContent';
+   headers={'x-goog-api-key':credential,'content-type':'application/json'};
+   body={contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:512}};
+  }else{
+   url=ENDPOINTS[provider];
+   headers={'authorization':'Bearer '+credential,'content-type':'application/json'};
+   body={model,messages:[{role:'user',content:prompt}],max_tokens:512};
+  }
+  const response=await fetchImpl(url,{method:'POST',headers,body:JSON.stringify(body),signal:controller.signal});
+  if(!response.ok)return {ok:false,provider,code:response.status===429?'UPSTREAM_RATE_LIMIT':'UPSTREAM_UNAVAILABLE'};
+  let raw;
+  if(response.body?.getReader){
+   const reader=response.body.getReader(),chunks=[];
+   let total=0;
+   try{
+    while(true){
+     const part=await reader.read();
+     if(part.done)break;
+     total+=part.value.byteLength;
+     if(total>65536){await reader.cancel();return {ok:false,provider,code:'UPSTREAM_TOO_LARGE'};}
+     chunks.push(part.value);
+    }
+   }finally{reader.releaseLock();}
+   const bytes=new Uint8Array(total);
+   let offset=0;
+   for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+   try{raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}
+   catch{return {ok:false,provider,code:'INVALID_PROVIDER_RESPONSE'};}
+  }else{
+   raw=await response.text();
+   if(new TextEncoder().encode(raw).byteLength>65536)return {ok:false,provider,code:'UPSTREAM_TOO_LARGE'};
+  }
+  let data;
+  try{data=JSON.parse(raw);}catch{return {ok:false,provider,code:'INVALID_PROVIDER_RESPONSE'};}
+  const answer=provider==='gemini'?data?.candidates?.[0]?.content?.parts?.map(p=>p?.text||'').join(''):
+   data?.choices?.[0]?.message?.content;
+  if(typeof answer!=='string'||!answer.trim())return {ok:false,provider,code:'EMPTY_PROVIDER_RESPONSE'};
+  return {ok:true,provider,model,text:answer.trim().slice(0,2000),usage:extractProviderUsage(provider,data),rateLimit:readProviderRateLimit(provider,response.headers)};
+ }catch{return {ok:false,provider,code:'UPSTREAM_REQUEST_FAILED'};}
+ finally{clearTimeout(timer);}
+}

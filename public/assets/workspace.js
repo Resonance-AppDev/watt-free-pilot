@@ -4,7 +4,7 @@ import {asksWattAI,canRequestAI,normalizeAiStatus,normalizeAiMessages,mergeUnifi
 const $=id=>document.getElementById(id);
 const state={session:null,rooms:[],activeRoomId:null,messages:new Map(),cursors:new Map(),drafts:new Map(),pending:new Map(),
   roomEpoch:0,loginEpoch:0,action:'',sessionTimer:null,selectedRoom:null,
-  aiMessages:new Map(),aiStatuses:new Map()};
+  aiMessages:new Map(),aiStatuses:new Map(),providerConsents:new Map()};
 function notice(text,warning=false){$('status-text').textContent=text;$('status').classList.toggle('warning',warning);}
 function setBusy(action=''){
   state.action=action;
@@ -23,7 +23,7 @@ function tokenSession(){if(isExpired(state.session)){if(state.session)logout('Yo
 function logout(text='Signed out. Your private data was cleared from this tab.'){
   state.loginEpoch++;state.roomEpoch++;state.session=null;state.rooms=[];state.activeRoomId=null;state.selectedRoom=null;
   state.messages.clear();state.cursors.clear();state.drafts.clear();state.pending.clear();
-  state.aiMessages.clear();state.aiStatuses.clear();
+  state.aiMessages.clear();state.aiStatuses.clear();state.providerConsents.clear();
   if(state.sessionTimer)clearTimeout(state.sessionTimer);state.sessionTimer=null;
   $('login-view').hidden=false;$('app-view').hidden=true;$('login-form').reset();
   $('create-form').hidden=true;$('join-form').hidden=true;$('invite-panel').hidden=true;
@@ -93,6 +93,40 @@ function showRoomTitle(room){
   $('room-title').textContent=room?.title??'Choose a room';
   $('room-description').textContent=room?(room.members+' member'+(room.members===1?'':'s')+' · Private human + optional AI chat'):'Your private WATT conversations';
 }
+const AI_PROVIDERS=['groq','gemini','openrouter'];
+function renderProviderControls(){
+ const host=$('provider-consents');if(!host)return;
+ host.replaceChildren();host.hidden=!state.activeRoomId;
+ if(!state.activeRoomId)return;
+ const data=state.providerConsents.get(state.activeRoomId);
+ if(!data){host.textContent='Checking individual AI provider permissions…';return;}
+ for(const provider of AI_PROVIDERS){
+  const record=data.providers.find(x=>x.provider===provider);
+  if(!record)continue;
+  const line=document.createElement('div');line.className='ai-control-buttons';
+  const label=document.createElement('span');label.textContent=provider.toUpperCase()+' · '+record.approved_members+'/'+data.member_count+' members approved';
+  const button=document.createElement('button');button.type='button';button.className='button button-outline small-button';
+  button.textContent=record.my_consent?'Withdraw '+provider+' permission':'Allow '+provider+' AI';
+  button.disabled=Boolean(state.action);
+  button.addEventListener('click',()=>void runAction('provider-consent',async s=>{
+   const roomId=state.activeRoomId;if(!roomId)return;
+   await rpc('watt_ai_set_provider_consent',{p_room_id:roomId,p_provider:provider,p_allowed:!record.my_consent},s.token);
+   if(state.session!==s||state.activeRoomId!==roomId)return;
+   await refreshProviderConsents(roomId,s);
+   notice('Your '+provider+' permission was updated. AI remains inactive until the worker passes release verification.');
+  }));
+  line.append(label,button);host.append(line);
+ }
+}
+async function refreshProviderConsents(roomId,s){
+ try{
+  const data=await rpc('watt_ai_provider_consent_status',{p_room_id:roomId},s.token);
+  if(state.session!==s||state.activeRoomId!==roomId)return;
+  if(!Number.isInteger(data?.member_count)||!Array.isArray(data?.providers)||data.providers.length!==3)throw new Error('Invalid consent status');
+  state.providerConsents.set(roomId,data);
+ }catch(_){if(state.session===s&&state.activeRoomId===roomId)state.providerConsents.delete(roomId);}
+ renderProviderControls();
+}
 function renderAiControls(){
   const id=state.activeRoomId,room=state.rooms.find(r=>r.id===id);
   const panel=$('ai-controls');panel.hidden=!id||!room;
@@ -111,14 +145,14 @@ function renderAiControls(){
   $('ai-room-switch').textContent=status?.enabled?'Disable WATT AI':'Enable WATT AI';
   $('ai-room-switch').disabled=Boolean(state.action)||!status||(!status.enabled&&
     (!status.ready||!status.myConsent||status.consented!==status.members));
-  updateComposer();
+  renderProviderControls();updateComposer();
 }
 async function refreshAiRoom(id,s,epoch){
   if(state.session!==s||state.activeRoomId!==id||state.roomEpoch!==epoch)return;
   try{
     const status=normalizeAiStatus(await rpc('watt_ai_room_status',{p_room_id:id},s.token));
     if(state.session!==s||state.activeRoomId!==id||state.roomEpoch!==epoch)return;
-    state.aiStatuses.set(id,status);renderAiControls();
+    state.aiStatuses.set(id,status);renderAiControls();await refreshProviderConsents(id,s);
     const data=normalizeAiMessages(await rpc('watt_ai_get_room_messages',{p_room_id:id,p_after_id:0,p_limit:50},s.token),id);
     if(state.session!==s||state.activeRoomId!==id||state.roomEpoch!==epoch)return;
     state.aiMessages.set(id,data);renderMessages();
