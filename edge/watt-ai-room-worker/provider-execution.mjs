@@ -1,3 +1,4 @@
+import {extractProviderUsage,readProviderRateLimit} from './provider-usage-r16.mjs';
 // R15 provider execution primitive. Call only after provider-dispatch preflight and committed quota reservation.
 // No room history, database writes, implicit retries, paid fallback, or release activation.
 const ENDPOINTS=Object.freeze({
@@ -54,7 +55,7 @@ export async function executeFreeProvider({provider,model,prompt,credential,rese
   const answer=provider==='gemini'?data?.candidates?.[0]?.content?.parts?.map(p=>p?.text||'').join(''):
    data?.choices?.[0]?.message?.content;
   if(typeof answer!=='string'||!answer.trim())return {ok:false,provider,code:'EMPTY_PROVIDER_RESPONSE'};
-  return {ok:true,provider,model,text:answer.trim().slice(0,2000)};
+  return {ok:true,provider,model,text:answer.trim().slice(0,2000),usage:extractProviderUsage(provider,data),rateLimit:readProviderRateLimit(provider,response.headers)};
  }catch{return {ok:false,provider,code:'UPSTREAM_REQUEST_FAILED'};}
  finally{clearTimeout(timer);}
 }
