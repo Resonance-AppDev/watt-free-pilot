@@ -7,7 +7,7 @@ declare const Deno: {serve: (f: (request: Request) => Promise<Response>) => void
 const RELEASE_GATE_OPEN = false;
 const PROJECT = 'https://qylyuijjeruvbxipnrgh.supabase.co';
 const LEGACY_ORIGIN = 'https://headless-hnoporafmau-resonance36912-140e.wix-site-host.com';
-const PILOT_ORIGIN = /^https:\/\/watt-36912--watt-r12-unified-ai-[a-z0-9]+\.web\.app$/;
+const PILOT_ORIGIN = /^https:\/\/watt-36912--watt-r12-unified-ai-review-[a-z0-9]+\.web\.app$/;
 function allowOrigin(origin: string | null): boolean {
   return origin === LEGACY_ORIGIN || (typeof origin === 'string' && PILOT_ORIGIN.test(origin));
 }
