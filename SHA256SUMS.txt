@@ -63,7 +63,7 @@ b59a1a9c56156baef1aaf52e03f2633a0a4ad4394bb2a5f032d8434e19109e58  docs/R15-FREE-
 3cd0740e9f78c19eddb7ab70ea2f53c7d878fae9ed9531c6eddca753595f65eb  edge/watt-ai-room-worker/free-poll-quota.mjs
 8c63afcb4c461730e5ab1e68faee79c7018b36b4250c94ba73c47b53ff91c633  tests/free-poll-quota.test.mjs
 6160a38c1d44f81ecd9f5e290aaacb85d44a121ee0de063a28531ffdedebb5df  docs/R15-CLOUD-INTEGRATION-CONTRACT.md
-0300fe44b98f50e3505a2c2b40a6ec38aff815eb4c740208e4292fd5f99d7aec  edge/watt-ai-room-worker/provider-poll-consent.mjs
-5d014aa08d70912005bc63684ba1631c5e264dcbd48c948ba27a045350b1180e  tests/provider-poll-consent.test.mjs
+bc4a4fa15d0c4d023c33791b92ed7e5b5e6254a33bd0b79f09a77adb026437ff  edge/watt-ai-room-worker/provider-poll-consent.mjs
+fa4139c486a3948f4ce15bf5dd71ffc8d3226ffff7a8fc248fe912cc42dc0b92  tests/provider-poll-consent.test.mjs
 3f191de18565ebee90c22330cba7af74fe52951fc493ac59dd8f7e72f5d36b45  edge/watt-ai-room-worker/consent-readiness.mjs
 4d8d1350f1edb944283b9765ff2b7f75573e03ed27463c911cec9e9d8bf29433  tests/consent-readiness.test.mjs
