@@ -18,3 +18,8 @@ test('never fabricate three results or duplicate one provider',()=>{
  assert.equal(result.responses.length,1);assert.equal(result.partial,true);
 });
 test('reject unsafe poll size',()=>assert.throws(()=>selectFreeCandidates([],{maxResponses:4}),/INVALID_POLL_CONFIG/));
+
+test('eligible duplicate is not hidden by earlier ineligible record',()=>{
+ const bad={...eligible('groq'),providerConsent:false};
+ assert.deepEqual(selectFreeCandidates([bad,eligible('groq')]),[{id:'groq',model:'verified-free-model'}]);
+});
