@@ -2,7 +2,7 @@
 export const PROVIDERS=Object.freeze(['groq','gemini','openrouter']);
 export function providerConsentVersion(provider){
  if(!PROVIDERS.includes(provider))throw new TypeError('INVALID_PROVIDER');
- return 'watt-ai-provider-'+provider+'-v1';
+ return 'watt-ai-provider-v1';
 }
 export function allMembersApproved(members,consents,provider){
  const version=providerConsentVersion(provider);
@@ -14,7 +14,7 @@ export function allMembersApproved(members,consents,provider){
  }
  const approvals=new Set();
  for(const c of consents){
-  if(c?.consent_version!==version||c.allowed!==true||!ids.has(c.user_id))continue;
+  if(c?.provider!==provider||c?.consent_version!==version||c.allowed!==true||!ids.has(c.user_id))continue;
   approvals.add(c.user_id);
  }
  return approvals.size===ids.size;
