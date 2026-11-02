@@ -63,3 +63,5 @@ b59a1a9c56156baef1aaf52e03f2633a0a4ad4394bb2a5f032d8434e19109e58  docs/R15-FREE-
 3cd0740e9f78c19eddb7ab70ea2f53c7d878fae9ed9531c6eddca753595f65eb  edge/watt-ai-room-worker/free-poll-quota.mjs
 8c63afcb4c461730e5ab1e68faee79c7018b36b4250c94ba73c47b53ff91c633  tests/free-poll-quota.test.mjs
 6160a38c1d44f81ecd9f5e290aaacb85d44a121ee0de063a28531ffdedebb5df  docs/R15-CLOUD-INTEGRATION-CONTRACT.md
+0300fe44b98f50e3505a2c2b40a6ec38aff815eb4c740208e4292fd5f99d7aec  edge/watt-ai-room-worker/provider-poll-consent.mjs
+5d014aa08d70912005bc63684ba1631c5e264dcbd48c948ba27a045350b1180e  tests/provider-poll-consent.test.mjs
