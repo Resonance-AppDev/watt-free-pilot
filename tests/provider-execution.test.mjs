@@ -35,3 +35,11 @@ test('rejects unsafe model names and oversized prompts',async()=>{
  await assert.rejects(executeFreeProvider({...base,model:'bad?key=secret'}),/DISPATCH_NOT_AUTHORIZED/);
  await assert.rejects(executeFreeProvider({...base,prompt:'a'.repeat(2001)}),/DISPATCH_NOT_AUTHORIZED/);
 });
+test('refuses unverified free tier or closed release without network activity',async()=>{
+ let calls=0;
+ const fetchImpl=async()=>{calls++;throw Error('must not call upstream');};
+ for(const patch of [{verifiedFreeTier:false},{releaseApproved:false},{verifiedFreeTier:undefined},{releaseApproved:undefined}]){
+  await assert.rejects(executeFreeProvider({...base,...patch,fetchImpl}),/DISPATCH_NOT_AUTHORIZED/);
+ }
+ assert.equal(calls,0);
+});
