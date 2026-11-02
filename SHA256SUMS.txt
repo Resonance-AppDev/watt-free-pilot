@@ -60,6 +60,6 @@ cefd3e264e329161d3c3cfeed316c311d92ba117006e897ac92777b0f859bc45  tests/free-ai-
 b59a1a9c56156baef1aaf52e03f2633a0a4ad4394bb2a5f032d8434e19109e58  docs/R15-FREE-AI-TOP3-REVIEW.md
 2ae6d424ba3a5bdd3009ac317d5f5817292f15f86bda82f4d7bc19bb5e3ecc3c  edge/watt-ai-room-worker/free-poll-adapters.mjs
 28ebd4bbcb4a658dd89a239f15795683eec3037f7b3fdda340d5bcc92a3e0aac  tests/free-poll-adapters.test.mjs
-b1f3493f3ab84b15a9d52f9119c8afc7cb4e889ae367ca58718ee3f0b256b3a4  edge/watt-ai-room-worker/free-poll-quota.mjs
-5f78cffb7f6842eb6174c8f7ec93eb065de274aac8befa08fdb397281493b465  tests/free-poll-quota.test.mjs
+3cd0740e9f78c19eddb7ab70ea2f53c7d878fae9ed9531c6eddca753595f65eb  edge/watt-ai-room-worker/free-poll-quota.mjs
+8c63afcb4c461730e5ab1e68faee79c7018b36b4250c94ba73c47b53ff91c633  tests/free-poll-quota.test.mjs
 6160a38c1d44f81ecd9f5e290aaacb85d44a121ee0de063a28531ffdedebb5df  docs/R15-CLOUD-INTEGRATION-CONTRACT.md
